@@ -59,7 +59,7 @@ cmdline = testGroup "cmdline"
   , testCase "Reading own data, print to stdout"
              (withArgs selfHpcDataArgs defaultMain)
   , testCase "Reading own data, print to file"
-             (withArgs ("--out=reports" : selfHpcDataArgs) defaultMain)
+             (withArgs ("--out=test.out" : selfHpcDataArgs) defaultMain)
   ]
 
 testDataDir :: FilePath

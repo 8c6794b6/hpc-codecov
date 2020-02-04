@@ -1,6 +1,8 @@
 hpc-codecov
 ===========
 
+[![Build
+Status](http://img.shields.io/travis/8c6794b6/codecov-haskell/master.svg?logo=travis)](https://travis-ci.org/8c6794b6/hpc-codecov)
 [![CircleCI](https://img.shields.io/circleci/build/gh/8c6794b6/hpc-codecov/master?logo=circleci)](https://circleci.com/gh/8c6794b6/hpc-codecov)
 [![codecov](https://codecov.io/gh/8c6794b6/hpc-codecov/branch/master/graph/badge.svg)](https://codecov.io/gh/8c6794b6/hpc-codecov)
 
@@ -22,8 +24,9 @@ Examples
 --------
 
 Following shows two examples for generating test coverage report of
-the ``hpc-codecov`` package itself, with ``cabal-install`` (version
-3.0.0) Nix-style local build commands, and with ``stack``.
+the ``hpc-codecov`` package itself, one with ``cabal-install``
+(version 3.0.0) Nix-style local build commands, and another with
+``stack``.
 
 ### With cabal-install
 

@@ -1,0 +1,94 @@
+language: c
+
+os: linux
+
+git:
+  depth: 3
+
+cache:
+  directories:
+    - $HOME/.stack
+    - $HOME/.cabal/packages
+    - $HOME/.cabal/store
+
+jobs:
+  include:
+    - env: EXEC="stack" RESOLVER="lts-14"
+    - env: EXEC="cabal" GHCVER="8.8.2"
+      addons:
+        apt:
+          packages:
+            - cabal-install-3.0
+            - ghc-8.8.2
+          sources:
+            - hvr-ghc
+
+before_install:
+  - mkdir -p ~/.local/bin
+  - export PATH="$HOME/.local/bin:$PATH"
+  - |
+     case "$EXEC" in
+       stack)
+         travis_retry curl \
+           -L https://get.haskellstack.org/stable/linux-x86_64.tar.gz | \
+           tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+       ;;
+       cabal)
+         export PATH=/opt/ghc/bin:$PATH
+       ;;
+     esac
+
+install:
+  - |
+    case "$EXEC" in
+      stack)
+        export STACK="stack --resolver=$RESOLVER"
+        $STACK --version
+        $STACK test --no-terminal --install-ghc --only-dependencies
+        ;;
+      cabal)
+        which cabal
+        which ghc
+        cabal --version
+        ghc --version
+        travis_retry cabal v2-update
+        ;;
+    esac
+
+script:
+  - |
+    case "$EXEC" in
+      stack)
+        echo stack=$STACK
+        $STACK --no-terminal build --fast --test --coverage
+        ;;
+      cabal)
+        cabal v2-configure --enable-tests --enable-coverage
+        cabal v2-test
+        ;;
+    esac
+
+after_script:
+  - |
+    case "$EXEC" in
+      stack)
+        echo stack=$STACK
+        HPC_ROOT=$($STACK path --local-hpc-root)
+        DIST_DIR=$($STACK path --dist-dir)
+        TIX=$HPC_ROOT/hpc-codecov/test-main/test-main.tix
+        MIX=$DIST_DIR/hpc
+        echo TIX=$TIX
+        echo MIX=$MIX
+        $STACK exec -- hpc-codecov --mix=$MIX -o reports $TIX
+        bash <(curl -s https://codecov.io/bash) -f reports
+        ;;
+      cabal)
+        VERSION=$(cabal v2-exec -- hpc-codecov --version)
+        PROJ=hpc-codecov-$VERSION
+        MIX=$(find ./dist-newstyle -name vanilla)/mix/$PROJ
+        TIX=$(find ./dist-newstyle -name $PROJ.tix)
+        echo TIX=$TIX
+        echo MIX=$MIX
+        cabal v2-exec -- hpc-codecov --mix=$MIX -o reports $TIX
+        bash <(curl -s https://codecov.io/bash) -f reports
+    esac
