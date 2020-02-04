@@ -67,7 +67,8 @@ selfHpcDataArgs =
       me = "hpc-codecov-" ++ versionString
       tix = self </> "tix" </> me </> me <.> "tix"
       mix = self </> "mix" </> me
-  in  ["--tix=" ++ tix, "--mix=" ++ mix]
+  in  [ "--tix=" ++ tix, "--mix=" ++ mix
+      , "--exclude=Paths_hpc_codecov" ]
 
 -- Auxiliary functions
 

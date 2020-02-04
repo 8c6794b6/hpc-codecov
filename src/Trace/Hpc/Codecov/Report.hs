@@ -100,7 +100,17 @@ tixToCoverage :: Options -> (FilePath, Maybe Tix) -> IO [CoverageEntry]
 tixToCoverage opts (path, mb_tix) =
   case mb_tix of
     Nothing        -> error ("Tix file \"" ++ path ++ "\" not found")
-    Just (Tix tms) -> mapM (tixModuleToCoverage opts) tms
+    Just (Tix tms) -> mapM (tixModuleToCoverage opts)
+                           (excludeModules opts tms)
+
+excludeModules :: Options -> [TixModule] -> [TixModule]
+excludeModules opts tms = filter exclude tms
+  where
+    exclude (TixModule pkg_slash_name _ _ _) =
+      let modname = case break (== '/') pkg_slash_name of
+                      (_, '/':name) -> name
+                      (name, _)     -> name
+      in  notElem modname (optExcludes opts)
 
 tixModuleToCoverage :: Options -> TixModule -> IO CoverageEntry
 tixModuleToCoverage opts tm@(TixModule _name _hash _count _ixs) =
