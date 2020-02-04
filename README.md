@@ -1,10 +1,11 @@
 hpc-codecov
 ===========
 
+[![codecov](https://codecov.io/gh/8c6794b6/hpc-codecov/branch/master/graph/badge.svg)](https://codecov.io/gh/8c6794b6/hpc-codecov)
 [![Build
 Status](http://img.shields.io/travis/8c6794b6/codecov-haskell/master.svg?logo=travis)](https://travis-ci.org/8c6794b6/hpc-codecov)
 [![CircleCI](https://img.shields.io/circleci/build/gh/8c6794b6/hpc-codecov/master?logo=circleci)](https://circleci.com/gh/8c6794b6/hpc-codecov)
-[![codecov](https://codecov.io/gh/8c6794b6/hpc-codecov/branch/master/graph/badge.svg)](https://codecov.io/gh/8c6794b6/hpc-codecov)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/8c6794b6/hpc-codecov?svg=true)](https://ci.appveyor.com/project/8c6794b6/hpc-codecov)
 
 The ``hpc-codecov`` package contains an executable and library codes
 for generating [codecov.io](https://codecov.io) test coverage report
@@ -16,7 +17,7 @@ of ``.tix`` and ``mix`` files. Instead, let the user to explicitly
 specify the file path and directories. The rational behind the
 decision is to support multiple version of multiple build tools, such
 as [cabal-install](http://hackage.haskell.org/package/cabal-install)
-v1-style legacy build, cabal v2-style build, and
+legacy v1-style build, v2-style build, and
 [stack](https://docs.haskellstack.org/en/stable/README/).
 
 
@@ -48,7 +49,7 @@ $ tix=$(find ./dist-newstyle -name $proj.tix)
 $ hpc-codecov --mix=mix --exclude=Paths_hpc_codecov --out=reports $tix
 ```
 
-The ``--out`` specifies the output file to write the JSON
+The ``--out`` option specifies the output file to write the JSON
 report. Observing the contents of ``reports`` with
 [``jq``](https://stedolan.github.io/jq/):
 
@@ -72,7 +73,7 @@ $ jq . reports | head -20
 ```
 
 Send the resulting report file to Codecov.io with the [bash
-uploader](https://codecov.io/bash):
+uploader](https://github.com/codecov/codecov-bash/):
 
 ```console
 $ bash <(curl -s https://codecov.io/bash) -f reports
@@ -82,7 +83,8 @@ According to the Codecov.io
 [FAQ](https://docs.codecov.io/docs/frequently-asked-questions), the
 uploader should work from [Travis](https://travis-ci.org/),
 [CircleCI](https://circleci.com/), and
-[AppVeyor](https://www.appveyor.com/) for public projects.
+[AppVeyor](https://www.appveyor.com/) for public projects without
+Codecov.io token.
 
 
 ### With stack
