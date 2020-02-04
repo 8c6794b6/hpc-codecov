@@ -14,7 +14,7 @@ of ``.tix`` and ``mix`` files. Instead, let the user to explicitly
 specify the file path and directories. The rational behind the
 decision is to support multiple version of multiple build tools, such
 as [cabal-install](http://hackage.haskell.org/package/cabal-install)
-v1-style legacy build, cabal v2-build style, and
+v1-style legacy build, cabal v2-style build, and
 [stack](https://docs.haskellstack.org/en/stable/README/).
 
 
