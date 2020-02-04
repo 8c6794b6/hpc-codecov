@@ -39,9 +39,9 @@ Then generate a Codecov.io JSON coverage data from the ``.tix`` and
 ``.mix`` files.
 
 ```console
-$ export proj=hpc-codecov-0.1.0.0
-$ export mix=$(find ./dist-newstyle -name vanilla)/mix/$proj
-$ export tix=$(find ./dist-newstyle -name $proj.tix)
+$ proj=hpc-codecov-0.1.0.0
+$ mix=$(find ./dist-newstyle -name vanilla)/mix/$proj
+$ tix=$(find ./dist-newstyle -name $proj.tix)
 $ hpc-codecov --mix=mix --exclude=Paths_hpc_codecov --out=reports $tix
 ```
 
