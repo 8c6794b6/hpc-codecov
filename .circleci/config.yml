@@ -1,0 +1,48 @@
+version: 2.1
+
+jobs:
+  build:
+    docker:
+      - image: fpco/stack-build:lts
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore cached dependencies
+          keys:
+            - hpc-codecov-{{ checksum "hpc-codecov.cabal" }}
+      - run:
+          name: Setup stack
+          command: |
+            stack setup
+            which stack
+            stack --version
+            stack exec -- which ghc
+            stack exec -- ghc --version
+      - run:
+          name: Build package and run tests
+          command: stack build --no-terminal --fast --test --coverage
+      - run:
+          name: Generate coverge report
+          command: |
+            HPC_ROOT=$(stack path --local-hpc-root)
+            DIST_DIR=$(stack path --dist-dir)
+            TIX=$HPC_ROOT/hpc-codecov/test-main/test-main.tix
+            MIX=$DIST_DIR/hpc
+            echo TIX=$TIX
+            echo MIX=$MIX
+            stack exec -- hpc-codecov --tix=$TIX --mix=$MIX -o reports
+      - run:
+          name: Upload coverage report
+          command: bash <(curl -s https://codecov.io/bash) -f reports
+      - run:
+          name: Install executable
+          command: stack build --no-terminal --copy-bins
+      - save_cache:
+          name: Cache dependencies
+          key: codecov-haskell-{{ checksum "hpc-codecov.cabal" }}
+          paths:
+            - ".stack-work"
+            - "/root/.stack"
+      - store_artifacts:
+          path: ~/.local/bin/hpc-codecov
+          destination: hpc-codecov

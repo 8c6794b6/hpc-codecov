@@ -1,0 +1,23 @@
+# Common uninteresting files
+*.hi
+*.o
+*.dyn_hi
+*.dyn_o
+*~
+*#
+
+# For cabal v1 build
+dist/
+
+# For cabal v2 build
+dist-newstyle/
+cabal.project.local
+
+# For stack build
+.stack-work
+stack.yaml.lock
+
+# Miscellaneous
+reports
+hpc-codecov.tix
+tmp/
