@@ -39,7 +39,7 @@ jobs:
           command: stack build --no-terminal --copy-bins
       - save_cache:
           name: Cache dependencies
-          key: codecov-haskell-{{ checksum "hpc-codecov.cabal" }}
+          key: hpc-codecov-{{ checksum "hpc-codecov.cabal" }}
           paths:
             - ".stack-work"
             - "/root/.stack"
