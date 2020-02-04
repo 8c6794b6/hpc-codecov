@@ -1,5 +1,4 @@
 -- |
---
 -- Module:     Trace.Hpc.Codecov.Options
 -- Copyright:  (c) 2020 8c6794b6
 -- License:    BSD3
@@ -26,7 +25,7 @@ import Paths_hpc_codecov     (version)
 
 -- | Options for generating test coverage report.
 data Options = Options
-  { optTixs        :: [FilePath]
+  { optTix         :: Maybe FilePath
   , optMixDirs     :: [FilePath]
   , optSrcDirs     :: [FilePath]
   , optExcludes    :: [String]
@@ -39,7 +38,7 @@ data Options = Options
 -- | The default 'Options'.
 defaultOptions :: Options
 defaultOptions = Options
-  { optTixs = []
+  { optTix = Nothing
   , optMixDirs = []
   , optSrcDirs = [""]
   , optExcludes = []
@@ -52,14 +51,10 @@ defaultOptions = Options
 -- | Commandline option oracle.
 options :: [OptDescr (Options -> Options)]
 options =
-  [ Option ['t'] ["tix"]
-           (ReqArg (\p opts -> opts {optTixs = p : optTixs opts})
-                   "FILE")
-           ".tix file"
-  , Option ['m'] ["mixdir"]
-           (ReqArg (\d opts -> opts {optMixDirs = d : optMixDirs opts})
-                   "DIR")
-           ".mix directory, allows repeats"
+  [ Option ['m'] ["mixdir"]
+            (ReqArg (\d opts -> opts {optMixDirs = d : optMixDirs opts})
+                    "DIR")
+            ".mix directory, allows repeats"
   , Option ['s'] ["srcdir"]
            (ReqArg (\d opts -> opts {optSrcDirs = d : optSrcDirs opts})
                    "DIR")
@@ -70,7 +65,7 @@ options =
            "module name to exclude, allows repeats"
   , Option ['o'] ["out"]
            (ReqArg (\p opts -> opts {optOutFile = Just p}) "FILE")
-           "output file"
+           "output file, default is stdout"
   , Option [] ["verbose"]
            (NoArg (\opts -> opts {optVerbose = True}))
            "show verbose output"
@@ -87,7 +82,14 @@ options =
 parseOptions :: [String] -> Either [String] Options
 parseOptions args =
   case getOpt Permute options args of
-    (opts, _, []) -> Right (foldr (.) id opts $ defaultOptions)
+    (flags, rest, []) ->
+      -- Not returning error messages with missing ".tix" file
+      -- argument at this point, to show help and version messages
+      -- without specifying ".tix" file.
+      let opts = foldr (.) id flags $ defaultOptions
+      in  case rest of
+            []      -> Right opts
+            (tix:_) -> Right (opts {optTix = Just tix})
     (_, _, errs)  -> Left errs
 
 -- | Help message for command line output.
@@ -95,7 +97,7 @@ helpMessage :: String -- ^ Executable program name.
             -> String
 helpMessage name = usageInfo header options
   where
-    header = "USAGE: " ++ name ++ " [OPTIONS] \n\
+    header = "USAGE: " ++ name ++ " [OPTIONS] TIX_FILE\n\
 \\n\
 \  Generate codecov.io coverage report from hpc tix and mix files \n\
 \\n\

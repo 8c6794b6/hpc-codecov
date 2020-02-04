@@ -30,7 +30,7 @@ jobs:
             MIX=$DIST_DIR/hpc
             echo TIX=$TIX
             echo MIX=$MIX
-            stack exec -- hpc-codecov --tix=$TIX --mix=$MIX -o reports
+            stack exec -- hpc-codecov --mix=$MIX -o reports $TIX
       - run:
           name: Upload coverage report
           command: bash <(curl -s https://codecov.io/bash) -f reports

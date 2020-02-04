@@ -46,8 +46,12 @@ cmdline :: TestTree
 cmdline = testGroup "cmdline"
   [ testCase "Passing non-existing option"
              (shouldFail (withArgs ["--foo"] defaultMain))
-  , testCase "Passing tix without file"
-             (shouldFail (withArgs ["--tix"] defaultMain))
+  , testCase "Passing mixdir without argument"
+             (shouldFail (withArgs ["--mixdir"] defaultMain))
+  , testCase "Should fail when no tix file were specified"
+             (shouldFail (withArgs [] defaultMain))
+  , testCase "Should fail when non-existing tix were given"
+             (shouldFail (withArgs ["no_such_file.tix"] defaultMain))
   , testCase "Help command show help and exit"
              (withArgs ["--help"] defaultMain)
   , testCase "Version command show version and exit"
@@ -67,8 +71,8 @@ selfHpcDataArgs =
       me = "hpc-codecov-" ++ versionString
       tix = self </> "tix" </> me </> me <.> "tix"
       mix = self </> "mix" </> me
-  in  [ "--tix=" ++ tix, "--mix=" ++ mix
-      , "--exclude=Paths_hpc_codecov" ]
+  in  [ "--mix=" ++ mix, "--exclude=Paths_hpc_codecov"
+      , tix ]
 
 -- Auxiliary functions
 

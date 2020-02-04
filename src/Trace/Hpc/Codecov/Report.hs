@@ -1,4 +1,3 @@
-{-# LANGUAGE RecordWildCards #-}
 -- |
 -- Module:     Trace.Hpc.Codecov.Report
 -- Copyright:  (c) 2020 8c6794b6
@@ -51,9 +50,10 @@ import Trace.Hpc.Codecov.Options
 
 -- | Generate report data from options.
 genReport :: Options -> IO ()
-genReport opts@Options{..} =
-  do mb_tixs <- mapM readTixWithPath optTixs
-     coverages <- fmap concat (mapM (tixToCoverage opts) mb_tixs)
+genReport opts =
+  do let noTix = putStrLn "No \".tix\" file specified" >> exitFailure
+     mb_tixs <- maybe noTix readTixWithPath (optTix opts)
+     coverages <- tixToCoverage opts mb_tixs
      emitCoverageJSON opts coverages
 
 -- | Read tix file from file path, return a pair of path and the read
@@ -99,7 +99,9 @@ buildJSON entries = contents
 tixToCoverage :: Options -> (FilePath, Maybe Tix) -> IO [CoverageEntry]
 tixToCoverage opts (path, mb_tix) =
   case mb_tix of
-    Nothing        -> error ("Tix file \"" ++ path ++ "\" not found")
+    Nothing        -> do putStrLn ("Error: tix file \"" ++ path ++
+                                   "\" not found")
+                         exitFailure
     Just (Tix tms) -> mapM (tixModuleToCoverage opts)
                            (excludeModules opts tms)
 
