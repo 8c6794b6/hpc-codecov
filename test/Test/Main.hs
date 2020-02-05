@@ -4,12 +4,14 @@ module Test.Main (main) where
 -- base
 import           Control.Exception         (SomeException (..), try)
 import           System.Environment        (withArgs)
+import           System.IO                 (hClose, openTempFile)
 
 -- filepath
 import           System.FilePath           ((<.>), (</>))
 
 -- directory
-import           System.Directory          (removeDirectoryRecursive)
+import           System.Directory          (removeDirectoryRecursive,
+                                            removeFile)
 
 -- tar
 import           Codec.Archive.Tar         (extract)
@@ -28,7 +30,37 @@ main :: IO ()
 main = Tasty.defaultMain tests
 
 tests :: TestTree
-tests = withSelfHpcData (testGroup "run" [cmdline])
+tests = testGroup "run" [cmdline, withSelfHpcData report]
+
+report :: TestTree
+report = testGroup "main"
+  [ testCase "self-data-to-stdout" (main' selfHpcDataArgs)
+  , testCase "self-data-to-stdout-verbose"
+             (main' ("--verbose":selfHpcDataArgs))
+  , withTempFile
+      (\getPath ->
+         testCase "self-data-to-file-verbose"
+                  (do path <- getPath
+                      main' (["--out=" ++ path, "--verbose"] ++
+                             selfHpcDataArgs)))
+  ]
+
+cmdline :: TestTree
+cmdline = testGroup "cmdline"
+  [ testCase "non-existing-option"
+             (shouldFail (main' ["--foo"]))
+  , testCase "mixdir-without-argument"
+             (shouldFail (main' ["--mixdir"]))
+  , testCase "no-tix-file"
+             (shouldFail (main' []))
+  , testCase "non-existing-tix"
+             (shouldFail (main' ["no_such_file.tix"]))
+  , testCase "help" (main' ["--help"])
+  , testCase "version" (main' ["--version"])
+  ]
+
+main' :: [String] -> IO ()
+main' args = withArgs args defaultMain
 
 -- Run given test with mix and tix files of hpc-codecov package.
 --
@@ -42,25 +74,14 @@ withSelfHpcData tt = withResource acquire release (const tt)
                  return (testDataDir </> "self")
     release = removeDirectoryRecursive
 
-cmdline :: TestTree
-cmdline = testGroup "cmdline"
-  [ testCase "Passing non-existing option"
-             (shouldFail (withArgs ["--foo"] defaultMain))
-  , testCase "Passing mixdir without argument"
-             (shouldFail (withArgs ["--mixdir"] defaultMain))
-  , testCase "Should fail when no tix file were specified"
-             (shouldFail (withArgs [] defaultMain))
-  , testCase "Should fail when non-existing tix were given"
-             (shouldFail (withArgs ["no_such_file.tix"] defaultMain))
-  , testCase "Help command show help and exit"
-             (withArgs ["--help"] defaultMain)
-  , testCase "Version command show version and exit"
-             (withArgs ["--version"] defaultMain)
-  , testCase "Reading own data, print to stdout"
-             (withArgs selfHpcDataArgs defaultMain)
-  , testCase "Reading own data, print to file"
-             (withArgs ("--out=test.out" : selfHpcDataArgs) defaultMain)
-  ]
+-- | Run test with path to temporary file.
+withTempFile :: (IO FilePath -> TestTree) -> TestTree
+withTempFile = withResource acquire release
+  where
+    acquire = do (path,hdl) <- openTempFile "." "test.tmp"
+                 hClose hdl
+                 return path
+    release path = removeFile path
 
 testDataDir :: FilePath
 testDataDir = "test" </> "data"
@@ -71,10 +92,7 @@ selfHpcDataArgs =
       me = "hpc-codecov-" ++ versionString
       tix = self </> "tix" </> me </> me <.> "tix"
       mix = self </> "mix" </> me
-  in  [ "--mix=" ++ mix, "--exclude=Paths_hpc_codecov"
-      , tix ]
-
--- Auxiliary functions
+  in  ["--mix=" ++ mix, "--exclude=Paths_hpc_codecov", tix]
 
 -- | Pass the HUnit test when an exception was thrown, otherwise a
 -- test failure.
