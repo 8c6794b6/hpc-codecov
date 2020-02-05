@@ -23,6 +23,7 @@ extra-source-files:
 library
   hs-source-dirs:      src
   exposed-modules:     Paths_hpc_codecov
+                       Trace.Hpc.Codecov.Error
                        Trace.Hpc.Codecov.Main
                        Trace.Hpc.Codecov.Options
                        Trace.Hpc.Codecov.Report

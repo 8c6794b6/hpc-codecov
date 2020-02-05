@@ -52,28 +52,28 @@ defaultOptions = Options
 options :: [OptDescr (Options -> Options)]
 options =
   [ Option ['m'] ["mixdir"]
-            (ReqArg (\d opts -> opts {optMixDirs = d : optMixDirs opts})
+            (ReqArg (\d o -> o {optMixDirs = d : optMixDirs o})
                     "DIR")
-            ".mix directory, allows repeats"
+            ".mix file directory, can repeat"
   , Option ['s'] ["srcdir"]
-           (ReqArg (\d opts -> opts {optSrcDirs = d : optSrcDirs opts})
+           (ReqArg (\d o -> o {optSrcDirs = d : optSrcDirs o})
                    "DIR")
-           "source directory, allows repeats"
+           "source directory, can repeat"
   , Option ['x'] ["exclude"]
-           (ReqArg (\m opts -> opts {optExcludes = m : optExcludes opts})
+           (ReqArg (\m o -> o {optExcludes = m : optExcludes o})
                    "MODULE")
-           "module name to exclude, allows repeats"
+           "module name to exclude, can repeat"
   , Option ['o'] ["out"]
-           (ReqArg (\p opts -> opts {optOutFile = Just p}) "FILE")
+           (ReqArg (\p o -> o {optOutFile = Just p}) "FILE")
            "output file, default is stdout"
   , Option [] ["verbose"]
-           (NoArg (\opts -> opts {optVerbose = True}))
+           (NoArg (\o -> o {optVerbose = True}))
            "show verbose output"
   , Option ['v'] ["version"]
-           (NoArg (\opts -> opts {optShowVersion = True}))
+           (NoArg (\o -> o {optShowVersion = True}))
            "show versoin and exit"
   , Option ['h'] ["help"]
-           (NoArg (\opts -> opts {optShowHelp = True}))
+           (NoArg (\o -> o {optShowHelp = True}))
            "show this help"
   ]
 

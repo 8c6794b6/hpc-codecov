@@ -10,11 +10,10 @@
 module Trace.Hpc.Codecov.Report (genReport) where
 
 -- base
-import Control.Exception         (bracket)
+import Control.Exception         (ErrorCall, bracket, handle)
 import Control.Monad             (when)
 import Control.Monad.ST          (ST)
 import Data.List                 (foldl', intersperse)
-import System.Exit               (exitFailure)
 import System.IO                 (IOMode (..), hClose, hPutStrLn, openFile,
                                   stderr, stdout)
 
@@ -32,7 +31,7 @@ import Data.ByteString.Builder   (Builder, char7, hPutBuilder, intDec,
 import System.Directory          (doesFileExist)
 
 -- filepath
-import System.FilePath           ((</>))
+import System.FilePath           ((<.>), (</>))
 
 -- hpc
 import Trace.Hpc.Mix             (BoxLabel (..), Mix (..), MixEntry,
@@ -41,6 +40,7 @@ import Trace.Hpc.Tix             (Tix (..), TixModule (..), readTix)
 import Trace.Hpc.Util            (HpcPos, fromHpcPos)
 
 -- Internal
+import Trace.Hpc.Codecov.Error
 import Trace.Hpc.Codecov.Options
 
 
@@ -52,11 +52,12 @@ import Trace.Hpc.Codecov.Options
 
 -- | Generate report data from options.
 genReport :: Options -> IO ()
-genReport opts =
-  do let noTix = putStrLn "No \".tix\" file specified" >> exitFailure
-     mb_tix <- maybe noTix readTixWithPath (optTix opts)
-     coverages <- tixToCoverage opts mb_tix
-     emitCoverageJSON opts coverages
+genReport opts = maybe err work (optTix opts)
+  where
+    err = throwIO NoTixFile
+    work path = readTixWithPath path >>=
+                tixToCoverage opts >>=
+                emitCoverageJSON opts
 
 -- | Read tix file from file path, return a pair of path and the read
 -- tix data.
@@ -92,6 +93,7 @@ buildJSON entries = contents
     dquote x = char7 '"' <> x <> char7 '"'
     braced x = char7 '{' <> x <> char7 '}'
     listify xs = mconcat (intersperse comma xs)
+    comma = char7 ','
     hit (n, tag) =
       case tag of
         0 -> k <> char7 '0'
@@ -100,14 +102,11 @@ buildJSON entries = contents
         _ -> mempty
       where
         k = key (intDec n)
-    comma = char7 ','
 
 tixToCoverage :: Options -> (FilePath, Maybe Tix) -> IO [CoverageEntry]
 tixToCoverage opts (path, mb_tix) =
   case mb_tix of
-    Nothing        -> do putStrLn ("Error: tix file \"" ++ path ++
-                                   "\" not found")
-                         exitFailure
+    Nothing        -> throwIO (TixNotFound path)
     Just (Tix tms) -> do say opts ("Found tix file: " ++ path)
                          mapM (tixModuleToCoverage opts)
                               (excludeModules opts tms)
@@ -125,7 +124,7 @@ excludeModules opts tms = filter exclude tms
 tixModuleToCoverage :: Options -> TixModule -> IO CoverageEntry
 tixModuleToCoverage opts tm@(TixModule name _hash _count _ixs) =
   do say opts ("Search mix:   " ++ name)
-     Mix path _ _ _ entries <- readMix (optMixDirs opts) (Right tm)
+     Mix path _ _ _ entries <- readMixFile (optMixDirs opts) tm
      say opts ("Found mix:    "++ path)
      let Info _ min_line max_line hits = makeInfo tm entries
          lineHits = makeLineHits min_line max_line hits
@@ -133,14 +132,18 @@ tixModuleToCoverage opts tm@(TixModule name _hash _count _ixs) =
      return (CoverageEntry { ce_path = path'
                            , ce_hits = lineHits })
 
+readMixFile :: [FilePath] -> TixModule -> IO Mix
+readMixFile dirs tm@(TixModule name _h _c _i) =
+  handle handler (readMix dirs (Right tm))
+  where
+    handler :: ErrorCall -> IO a
+    handler _ = throwIO (MixNotFound name dirs')
+    dirs' = map (</> (name <.> "mix")) dirs
+
 ensureSrcPath :: Options -> FilePath -> IO FilePath
 ensureSrcPath opts path = go [] (optSrcDirs opts)
   where
-    go acc [] =
-      do putStrLn ("Error: cannot find source \"" ++ path ++ "\"")
-         putStrLn "Searched:"
-         mapM_ (putStrLn . ("  - " ++)) acc
-         exitFailure
+    go acc [] = throwIO (SrcNotFound path acc)
     go acc (dir:dirs) =
       do let path' = dir </> path
          exist <- doesFileExist path'

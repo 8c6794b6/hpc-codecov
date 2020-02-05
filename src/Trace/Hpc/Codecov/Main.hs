@@ -7,26 +7,28 @@
 -- Main function for @hpc-codecov@.
 --
 module Trace.Hpc.Codecov.Main
-  ( defaultMain
+  ( main
   ) where
 
 -- base
 import System.Environment        (getArgs, getProgName)
-import System.Exit               (exitFailure)
 
 -- Internal
+import Trace.Hpc.Codecov.Error
 import Trace.Hpc.Codecov.Options
 import Trace.Hpc.Codecov.Report
 
 -- | The main function for @hpc-codecov@ executable.
-defaultMain :: IO ()
-defaultMain =
+main :: IO ()
+main = withHpcCodecovHandler main'
+
+-- | I do the actual work for the 'main' function.
+main' :: IO ()
+main' =
   do args <- getArgs
-     let printHelp = getProgName >>= putStrLn . helpMessage
+     me <- getProgName
      case parseOptions args of
-       Right opts | optShowHelp opts -> printHelp
+       Right opts | optShowHelp opts -> putStrLn (helpMessage me)
                   | optShowVersion opts -> putStrLn versionString
                   | otherwise -> genReport opts
-       Left errs  -> do putStrLn "Error: "
-                        mapM_ putStr (map ("  " ++) errs)
-                        exitFailure
+       Left errs -> throwIO (InvalidArgs errs)

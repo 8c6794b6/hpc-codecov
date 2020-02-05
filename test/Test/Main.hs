@@ -17,17 +17,16 @@ import           System.Directory          (removeDirectoryRecursive,
 import           Codec.Archive.Tar         (extract)
 
 -- tasty
-import           Test.Tasty                (TestTree, testGroup,
-                                            withResource)
-import qualified Test.Tasty                as Tasty
+import           Test.Tasty                (TestTree, defaultMain,
+                                            testGroup, withResource)
 import           Test.Tasty.HUnit
 
 -- Internal
-import           Trace.Hpc.Codecov.Main
+import qualified Trace.Hpc.Codecov.Main    as HpcCodecov
 import           Trace.Hpc.Codecov.Options
 
 main :: IO ()
-main = Tasty.defaultMain tests
+main = defaultMain tests
 
 tests :: TestTree
 tests = testGroup "run" [cmdline, withSelfHpcData report]
@@ -43,12 +42,20 @@ report = testGroup "main"
                   (do path <- getPath
                       main' (["--out=" ++ path, "--verbose"] ++
                              selfHpcDataArgs)))
+  , testCase "self-data-no-mix-none"
+             (shouldFail (main' [selfTix]))
+  , testCase "self-data-no-mix-one"
+             (shouldFail (main' ["--mix=foo", selfTix]))
+  , testCase "self-data-no-all-two"
+             (shouldFail (main' ["--mix=foo", "--mix=bar", selfTix]))
   ]
 
 cmdline :: TestTree
 cmdline = testGroup "cmdline"
   [ testCase "non-existing-option"
              (shouldFail (main' ["--foo"]))
+  , testCase "non-existing-options"
+             (shouldFail (main' ["--foo", "--bar", "--buzz"]))
   , testCase "mixdir-without-argument"
              (shouldFail (main' ["--mixdir"]))
   , testCase "no-tix-file"
@@ -60,7 +67,7 @@ cmdline = testGroup "cmdline"
   ]
 
 main' :: [String] -> IO ()
-main' args = withArgs args defaultMain
+main' args = withArgs args HpcCodecov.main
 
 -- Run given test with mix and tix files of hpc-codecov package.
 --
@@ -86,13 +93,20 @@ withTempFile = withResource acquire release
 testDataDir :: FilePath
 testDataDir = "test" </> "data"
 
+-- My package name
+me :: String
+me = "hpc-codecov-" ++ versionString
+
+selfDir :: FilePath
+selfDir = testDataDir </> "self"
+
+selfTix :: FilePath
+selfTix = selfDir </> "tix" </> me </> me <.> "tix"
+
 selfHpcDataArgs :: [String]
 selfHpcDataArgs =
-  let self = testDataDir </> "self"
-      me = "hpc-codecov-" ++ versionString
-      tix = self </> "tix" </> me </> me <.> "tix"
-      mix = self </> "mix" </> me
-  in  ["--mix=" ++ mix, "--exclude=Paths_hpc_codecov", tix]
+  let mix = selfDir </> "mix" </> me
+  in  ["--mix=" ++ mix, "--exclude=Paths_hpc_codecov", selfTix]
 
 -- | Pass the HUnit test when an exception was thrown, otherwise a
 -- test failure.
