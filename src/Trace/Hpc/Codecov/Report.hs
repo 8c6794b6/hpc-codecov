@@ -11,10 +11,12 @@ module Trace.Hpc.Codecov.Report (genReport) where
 
 -- base
 import Control.Exception         (bracket)
+import Control.Monad             (when)
 import Control.Monad.ST          (ST)
 import Data.List                 (foldl', intersperse)
 import System.Exit               (exitFailure)
-import System.IO                 (IOMode (..), hClose, openFile, stdout)
+import System.IO                 (IOMode (..), hClose, hPutStrLn, openFile,
+                                  stderr, stdout)
 
 -- array
 import Data.Array.IArray         (assocs, listArray, (!))
@@ -52,8 +54,8 @@ import Trace.Hpc.Codecov.Options
 genReport :: Options -> IO ()
 genReport opts =
   do let noTix = putStrLn "No \".tix\" file specified" >> exitFailure
-     mb_tixs <- maybe noTix readTixWithPath (optTix opts)
-     coverages <- tixToCoverage opts mb_tixs
+     mb_tix <- maybe noTix readTixWithPath (optTix opts)
+     coverages <- tixToCoverage opts mb_tix
      emitCoverageJSON opts coverages
 
 -- | Read tix file from file path, return a pair of path and the read
@@ -65,13 +67,17 @@ readTixWithPath path = readTix path >>= \mbt -> return (path, mbt)
 emitCoverageJSON :: Options -> [CoverageEntry] -> IO ()
 emitCoverageJSON opts entries = bracket acquire cleanup work
   where
+    work hdl = hPutBuilder hdl (buildJSON entries)
     (acquire, cleanup) =
       case optOutFile opts of
-        Just path -> (openFile path WriteMode, hClose)
-        Nothing   -> (return stdout, const (return ()))
-    work hdl = hPutBuilder hdl (buildJSON entries)
+        Just path -> (writeToFile path, doneWritingFile)
+        Nothing   -> (return stdout, const (say opts "Done."))
+    writeToFile path =
+      do say opts ("Writing report to \"" ++ path ++ "\"")
+         openFile path WriteMode
+    doneWritingFile hdl = hClose hdl >> say opts "Done."
 
--- | Build JSON report from coverage entries.
+-- | Build simple JSON report from coverage entries.
 buildJSON :: [CoverageEntry] -> Builder
 buildJSON entries = contents
   where
@@ -102,9 +108,11 @@ tixToCoverage opts (path, mb_tix) =
     Nothing        -> do putStrLn ("Error: tix file \"" ++ path ++
                                    "\" not found")
                          exitFailure
-    Just (Tix tms) -> mapM (tixModuleToCoverage opts)
-                           (excludeModules opts tms)
+    Just (Tix tms) -> do say opts ("Found tix file: " ++ path)
+                         mapM (tixModuleToCoverage opts)
+                              (excludeModules opts tms)
 
+-- | Exclude modules specified in given 'Options'.
 excludeModules :: Options -> [TixModule] -> [TixModule]
 excludeModules opts tms = filter exclude tms
   where
@@ -115,8 +123,10 @@ excludeModules opts tms = filter exclude tms
       in  notElem modname (optExcludes opts)
 
 tixModuleToCoverage :: Options -> TixModule -> IO CoverageEntry
-tixModuleToCoverage opts tm@(TixModule _name _hash _count _ixs) =
-  do Mix path _ _ _ entries <- readMix (optMixDirs opts) (Right tm)
+tixModuleToCoverage opts tm@(TixModule name _hash _count _ixs) =
+  do say opts ("Search mix:   " ++ name)
+     Mix path _ _ _ entries <- readMix (optMixDirs opts) (Right tm)
+     say opts ("Found mix:    "++ path)
      let Info _ min_line max_line hits = makeInfo tm entries
          lineHits = makeLineHits min_line max_line hits
      path' <- ensureSrcPath opts path
@@ -127,7 +137,7 @@ ensureSrcPath :: Options -> FilePath -> IO FilePath
 ensureSrcPath opts path = go [] (optSrcDirs opts)
   where
     go acc [] =
-      do putStrLn ("Error: cannot find \"" ++ path ++ "\"")
+      do putStrLn ("Error: cannot find source \"" ++ path ++ "\"")
          putStrLn "Searched:"
          mapM_ (putStrLn . ("  - " ++)) acc
          exitFailure
@@ -135,13 +145,14 @@ ensureSrcPath opts path = go [] (optSrcDirs opts)
       do let path' = dir </> path
          exist <- doesFileExist path'
          if exist
-            then return path'
+            then do say opts ("Found source: " ++ path')
+                    return path'
             else go (path':acc) dirs
 
 
 -- ------------------------------------------------------------------------
 --
--- Internal works for line hits
+-- Line hits
 --
 -- ------------------------------------------------------------------------
 
@@ -242,3 +253,13 @@ makeInfo tm = foldl' f z
     arr_tix :: UArray Int Int
     arr_tix = listArray (0, size - 1) (map fromIntegral tixs)
     TixModule _name _hash size tixs = tm
+
+
+-- ------------------------------------------------------------------------
+--
+-- IO messages
+--
+-- ------------------------------------------------------------------------
+
+say :: Options -> String -> IO ()
+say opts msg = when (optVerbose opts) (hPutStrLn stderr msg)
