@@ -7,7 +7,7 @@ import           System.Environment        (withArgs)
 import           System.IO                 (hClose, openTempFile)
 
 -- filepath
-import           System.FilePath           ((<.>), (</>))
+import           System.FilePath           (dropExtension, (<.>), (</>))
 
 -- directory
 import           System.Directory          (removeDirectoryRecursive,
@@ -25,30 +25,23 @@ import           Test.Tasty.HUnit
 import qualified Trace.Hpc.Codecov.Main    as HpcCodecov
 import           Trace.Hpc.Codecov.Options
 
+
+-- ------------------------------------------------------------------------
+--
+-- Tests
+--
+-- ------------------------------------------------------------------------
+
 main :: IO ()
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "run" [cmdline, withSelfHpcData report]
-
-report :: TestTree
-report = testGroup "main"
-  [ testCase "self-data-to-stdout" (main' selfHpcDataArgs)
-  , testCase "self-data-to-stdout-verbose"
-             (main' ("--verbose":selfHpcDataArgs))
-  , withTempFile
-      (\getPath ->
-         testCase "self-data-to-file-verbose"
-                  (do path <- getPath
-                      main' (["--out=" ++ path, "--verbose"] ++
-                             selfHpcDataArgs)))
-  , testCase "self-data-no-mix-none"
-             (shouldFail (main' [selfTix]))
-  , testCase "self-data-no-mix-one"
-             (shouldFail (main' ["--mix=foo", selfTix]))
-  , testCase "self-data-no-all-two"
-             (shouldFail (main' ["--mix=foo", "--mix=bar", selfTix]))
-  ]
+tests =
+  testGroup "main"
+            [ cmdline
+            , withTestTarData "self.tar" selfReport
+            , withTestTarData "reciprocal.tar" recipReport
+            ]
 
 cmdline :: TestTree
 cmdline = testGroup "cmdline"
@@ -66,19 +59,66 @@ cmdline = testGroup "cmdline"
   , testCase "version" (main' ["--version"])
   ]
 
+selfReport :: TestTree
+selfReport = testGroup "self"
+  [ testCase "self-data-to-stdout"
+             (main' selfHpcDataArgs)
+  , testCase "self-data-to-stdout-verbose"
+             (main' ("--verbose":selfHpcDataArgs))
+  , withTempFile
+      (\getPath ->
+         testCase "self-data-to-file-verbose"
+                  (do path <- getPath
+                      main' (["--out=" ++ path, "--verbose"] ++
+                             selfHpcDataArgs)))
+  , testCase "self-data-no-mix-none"
+             (shouldFail (main' [selfTix]))
+  , testCase "self-data-no-mix-one"
+             (shouldFail (main' ["--mix=foo", selfTix]))
+  , testCase "self-data-no-all-two"
+             (shouldFail (main' ["--mix=foo", "--mix=bar", selfTix]))
+  ]
+
+recipReport :: TestTree
+recipReport = testGroup "recip"
+  [ testCase "recip-data-to-stdout"
+             (main' ["--mix=test/data/reciprocal/.hpc"
+                    ,"--src=test/data/reciprocal"
+                    ,"--exclude=NoSuchModule"
+                    ,"--verbose"
+                    ,"test/data/reciprocal/reciprocal.tix"])
+  , testCase "recip-data-no-src"
+             (shouldFail
+                (main' ["--mix=test/data/reciprocal/.hpc"
+                       ,"--src=test/"
+                       ,"--src=test/data"
+                       ,"--verbose"
+                       ,"test/data/reciprocal/reciprocal.tix"]))
+  ]
+
+-- ------------------------------------------------------------------------
+--
+-- Auxiliary functions
+--
+-- ------------------------------------------------------------------------
+
+-- | Wrapper to run 'Trace.Hpc.Codecov.Main.main' with given argument
+-- strings.
 main' :: [String] -> IO ()
 main' args = withArgs args HpcCodecov.main
 
--- Run given test with mix and tix files of hpc-codecov package.
+-- | Run given test with mix and tix files of tar file.
 --
--- The mix and tix packages are archived as 'test/data/self.tar' and
+-- The mix and tix packages are archived as 'test/data/XXX.tar' and
 -- added as extra source file in cabal configuration. Unpacked tar
 -- contents are removed after running given tests.
-withSelfHpcData :: TestTree -> TestTree
-withSelfHpcData tt = withResource acquire release (const tt)
+withTestTarData :: String   -- ^ Tar file name under 'testDataDir'
+                -> TestTree -- ^ Test using the tar contents
+                -> TestTree
+withTestTarData dot_tar tt = withResource acquire release (const tt)
   where
-    acquire = do extract testDataDir (testDataDir </> "self.tar")
-                 return (testDataDir </> "self")
+    acquire = do extract testDataDir (testDataDir </> dot_tar)
+                 return (testDataDir </> dropExtension dot_tar)
     release = removeDirectoryRecursive
 
 -- | Run test with path to temporary file.
@@ -90,23 +130,27 @@ withTempFile = withResource acquire release
                  return path
     release path = removeFile path
 
-testDataDir :: FilePath
-testDataDir = "test" </> "data"
-
--- My package name
+-- | My package name
 me :: String
 me = "hpc-codecov-" ++ versionString
 
+-- | Directory path of extracted @self.tar@.
 selfDir :: FilePath
 selfDir = testDataDir </> "self"
 
+-- | Relative path of tix file in @self.tar@ from project root.
 selfTix :: FilePath
 selfTix = selfDir </> "tix" </> me </> me <.> "tix"
 
+-- | Arguments for running test with @self.tar@ contents.
 selfHpcDataArgs :: [String]
 selfHpcDataArgs =
   let mix = selfDir </> "mix" </> me
   in  ["--mix=" ++ mix, "--exclude=Paths_hpc_codecov", selfTix]
+
+-- | Directory containing test data.
+testDataDir :: FilePath
+testDataDir = "test" </> "data"
 
 -- | Pass the HUnit test when an exception was thrown, otherwise a
 -- test failure.
