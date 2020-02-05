@@ -5,6 +5,8 @@
 *.dyn_o
 *~
 *#
+.hpc
+a.out
 
 # For cabal v1 build
 dist/
