@@ -1,9 +1,13 @@
 version: 2.1
 
-jobs:
-  build:
+executors:
+  fpco-stack:
     docker:
       - image: fpco/stack-build:lts
+
+jobs:
+  build-with-stack:
+    executor: fpco-stack
     steps:
       - checkout
       - restore_cache:
@@ -46,3 +50,11 @@ jobs:
       - store_artifacts:
           path: ~/.local/bin/hpc-codecov
           destination: hpc-codecov
+
+workflows:
+  build:
+    jobs:
+      - build-with-stack:
+          filters:
+            branches:
+              only: master
