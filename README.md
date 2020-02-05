@@ -5,7 +5,7 @@ hpc-codecov
 [![Build
 Status](http://img.shields.io/travis/8c6794b6/codecov-haskell/master.svg?logo=travis)](https://travis-ci.org/8c6794b6/hpc-codecov)
 [![CircleCI](https://img.shields.io/circleci/build/gh/8c6794b6/hpc-codecov/master?logo=circleci)](https://circleci.com/gh/8c6794b6/hpc-codecov)
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/8c6794b6/hpc-codecov?svg=true)](https://ci.appveyor.com/project/8c6794b6/hpc-codecov)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/dijqtsoqgc26oghj?svg=true)](https://ci.appveyor.com/project/8c6794b6/hpc-codecov)
 
 The ``hpc-codecov`` package contains an executable and library codes
 for generating [codecov.io](https://codecov.io) test coverage report
