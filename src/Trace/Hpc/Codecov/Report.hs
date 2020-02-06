@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- |
 -- Module:     Trace.Hpc.Codecov.Report
 -- Copyright:  (c) 2020 8c6794b6
@@ -16,6 +17,9 @@ import Control.Monad.ST          (ST)
 import Data.List                 (foldl', intersperse)
 import System.IO                 (IOMode (..), hClose, hPutStrLn, openFile,
                                   stderr, stdout)
+#if !MIN_VERSION_base(4,11,0)
+import Data.Monoid               ((<>))
+#endif
 
 -- array
 import Data.Array.IArray         (assocs, listArray, (!))
