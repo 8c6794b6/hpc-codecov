@@ -8,14 +8,14 @@ Status](http://img.shields.io/travis/8c6794b6/codecov-haskell/master.svg?logo=tr
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/dijqtsoqgc26oghj?svg=true)](https://ci.appveyor.com/project/8c6794b6/hpc-codecov)
 
 The ``hpc-codecov`` package contains an executable and library codes
-for generating [codecov.io](https://codecov.io) test coverage report
-from ``.tix`` and ``.mix`` files made by
+for generating [Codecov](https://codecov.io) JSON coverage report from
+``.tix`` and ``.mix`` files made by
 [hpc](https://hackage.haskell.org/package/hpc).
 
 The ``hpc-codecov`` executable does not try to find out the location
 of ``.tix`` and ``mix`` files. Instead, let the user to explicitly
-specify the file path and directories. The rational behind the
-decision is to support multiple version of multiple build tools, such
+specify the file paths and directories. The rational behind the
+decision is to support multiple versions of multiple build tools, such
 as [cabal-install](http://hackage.haskell.org/package/cabal-install)
 legacy v1-style build, v2-style build, and
 [stack](https://docs.haskellstack.org/en/stable/README/).
@@ -39,22 +39,22 @@ $ cabal v2-configure --enable-test --enable-coverage
 $ cabal v2-test
 ```
 
-Then generate a Codecov.io JSON coverage data from the ``.tix`` and
-``.mix`` files.
+Then generate a Codecov JSON coverage data from the ``.tix`` and
+``.mix`` files:
 
 ```console
 $ proj=hpc-codecov-0.1.0.0
-$ mix=$(find ./dist-newstyle -name vanilla -print -quit)/mix/$proj
 $ tix=$(find ./dist-newstyle -name $proj.tix)
-$ hpc-codecov --mix=mix --exclude=Paths_hpc_codecov --out=reports $tix
+$ mix=$(find ./dist-newstyle -name vanilla -print -quit)/mix/$proj
+$ hpc-codecov --mix=$mix --exclude=Paths_hpc_codecov --out=codecov.json $tix
 ```
 
 The ``--out`` option specifies the output file to write the JSON
-report. Observing the contents of ``reports`` with
+report. Observing the contents of ``codecov.json`` with
 [``jq``](https://stedolan.github.io/jq/):
 
 ```console
-$ jq . reports | head -20
+$ jq . codecov.json | head -20
 {
   "coverage": {
     "src/Trace/Hpc/Codecov/Report.hs": {
@@ -72,19 +72,22 @@ $ jq . reports | head -20
       "77": 1,
 ```
 
-Send the resulting report file to Codecov.io with the [bash
-uploader](https://github.com/codecov/codecov-bash/):
+Send the resulting JSON report file to Codecov with the [bash
+uploader](https://github.com/codecov/codecov-bash/). The file name
+``codecov.json`` is listed in the uploader script as one of the file
+name patterns to upload, no need to specify the report filename
+explicitly:
 
 ```console
-$ bash <(curl -s https://codecov.io/bash) -f reports
+$ bash <(curl -s https://codecov.io/bash)
 ```
 
-According to the Codecov.io
+According to the Codecov
 [FAQ](https://docs.codecov.io/docs/frequently-asked-questions), the
 uploader should work from [Travis](https://travis-ci.org/),
 [CircleCI](https://circleci.com/), and
 [AppVeyor](https://www.appveyor.com/) for public projects without
-Codecov.io token.
+Codecov token.
 
 
 ### With stack
@@ -103,13 +106,13 @@ directory and dist directory:
 $ hpcroot=$(stack path --local-hpc-root)
 $ tix=$(find $hpcroot -name 'test-main.tix')
 $ mix=$(stack path --distdir)/hpc
-$ hpc-codecov --mix=$mix --exclude=Paths_hpc_codecov -o reports $tix
+$ hpc-codecov --mix=$mix --exclude=Paths_hpc_codecov -o codecov.json $tix
 ```
 
 Then send the resulting report file:
 
 ```console
-$ bash <(curl -s https://codecov.io/bash) -f reports
+$ bash <(curl -s https://codecov.io/bash)
 ```
 
 
