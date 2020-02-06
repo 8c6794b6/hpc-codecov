@@ -32,6 +32,7 @@ build_script:
   - set VANILLA=%G%\%PROJ%\hpc\vanilla
   - set MIX=%VANILLA%\mix\%PROJ%
   - set TIX=%VANILLA%\tix\%PROJ%\%PROJ%.tix
-  - cabal %CABOPTS% v2-exec -- hpc-codecov --mix=%MIX% -o reports %TIX%
+  - set OUT=codecov.json
+  - cabal %CABOPTS% v2-exec -- hpc-codecov --mix=%MIX% -o %OUT% %TIX%
   - curl -s https://codecov.io/bash > codecov.sh
-  - bash codecov.sh -f reports
+  - bash codecov.sh

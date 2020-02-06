@@ -79,8 +79,8 @@ after_script:
         MIX=$DIST_DIR/hpc
         echo TIX=$TIX
         echo MIX=$MIX
-        $STACK exec -- hpc-codecov --mix=$MIX -o reports $TIX
-        bash <(curl -s https://codecov.io/bash) -f reports
+        $STACK exec -- hpc-codecov --mix=$MIX -o codecov.json $TIX
+        bash <(curl -s https://codecov.io/bash)
         ;;
       cabal)
         VERSION=$(cabal v2-exec -- hpc-codecov --version)
@@ -89,6 +89,6 @@ after_script:
         TIX=$(find ./dist-newstyle -name $PROJ.tix)
         echo TIX=$TIX
         echo MIX=$MIX
-        cabal v2-exec -- hpc-codecov --mix=$MIX -o reports $TIX
-        bash <(curl -s https://codecov.io/bash) -f reports
+        cabal v2-exec -- hpc-codecov --mix=$MIX -o codecov.json $TIX
+        bash <(curl -s https://codecov.io/bash)
     esac
