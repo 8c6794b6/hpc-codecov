@@ -26,7 +26,8 @@ import System.Exit        (exitFailure)
 -- | Run action with 'HpcCodecovError' handler.
 --
 -- Run the given action with a handler for 'HpcCodecovError'. The
--- handler will show brief usage, then call 'exitFailure'.
+-- handler will show a brief usage and call 'exitFailure' when an
+-- exception was caught.
 withHpcCodecovHandler :: IO a   -- ^ Action to perform.
                       -> IO a
 withHpcCodecovHandler = handle handler
@@ -68,7 +69,6 @@ searchedLocations what path locs =
   where
     locs' =
       case locs of
-       []  -> "\n"
        [_] -> searched ""
        _   -> searched "s"
     searched post =

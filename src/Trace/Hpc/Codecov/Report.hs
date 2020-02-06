@@ -55,14 +55,18 @@ genReport :: Options -> IO ()
 genReport opts = maybe err work (optTix opts)
   where
     err = throwIO NoTixFile
-    work path = readTixWithPath path >>=
+    work path = readTixFile opts path >>=
                 tixToCoverage opts >>=
                 emitCoverageJSON opts
 
--- | Read tix file from file path, return a pair of path and the read
--- tix data.
-readTixWithPath :: FilePath -> IO (FilePath, Maybe Tix)
-readTixWithPath path = readTix path >>= \mbt -> return (path, mbt)
+-- | Read tix file from file path, return a 'Tix' data or throw
+-- 'TixNotFound' exception.
+readTixFile :: Options -> FilePath -> IO Tix
+readTixFile opts path =
+  do mb_tix <- readTix path
+     case mb_tix of
+       Nothing  -> throwIO (TixNotFound path)
+       Just tix -> say opts ("Found tix file: " ++ path) >> return tix
 
 -- | Emit simple coverage JSON data.
 emitCoverageJSON :: Options -> [CoverageEntry] -> IO ()
@@ -72,11 +76,11 @@ emitCoverageJSON opts entries = bracket acquire cleanup work
     (acquire, cleanup) =
       case optOutFile opts of
         Just path -> (writeToFile path, doneWritingFile)
-        Nothing   -> (return stdout, const (say opts "Done."))
+        Nothing   -> (return stdout, const (say opts "Done"))
     writeToFile path =
-      do say opts ("Writing report to \"" ++ path ++ "\"")
+      do say opts ("Writing JSON report to \"" ++ path ++ "\"")
          openFile path WriteMode
-    doneWritingFile hdl = hClose hdl >> say opts "Done."
+    doneWritingFile hdl = hClose hdl >> say opts "Done"
 
 -- | Build simple JSON report from coverage entries.
 buildJSON :: [CoverageEntry] -> Builder
@@ -103,13 +107,9 @@ buildJSON entries = contents
       where
         k = key (intDec n)
 
-tixToCoverage :: Options -> (FilePath, Maybe Tix) -> IO [CoverageEntry]
-tixToCoverage opts (path, mb_tix) =
-  case mb_tix of
-    Nothing        -> throwIO (TixNotFound path)
-    Just (Tix tms) -> do say opts ("Found tix file: " ++ path)
-                         mapM (tixModuleToCoverage opts)
-                              (excludeModules opts tms)
+tixToCoverage :: Options -> Tix -> IO [CoverageEntry]
+tixToCoverage opts (Tix tms) = mapM (tixModuleToCoverage opts)
+                                    (excludeModules opts tms)
 
 -- | Exclude modules specified in given 'Options'.
 excludeModules :: Options -> [TixModule] -> [TixModule]

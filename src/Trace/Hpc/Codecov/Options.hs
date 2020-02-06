@@ -10,7 +10,9 @@
 module Trace.Hpc.Codecov.Options
   ( Options(..)
   , defaultOptions
+  , emptyOptions
   , parseOptions
+  , printHelp
   , helpMessage
   , versionString
   ) where
@@ -19,6 +21,7 @@ module Trace.Hpc.Codecov.Options
 import Data.Version          (showVersion)
 import System.Console.GetOpt (ArgDescr (..), ArgOrder (..), OptDescr (..),
                               getOpt, usageInfo)
+import System.Environment    (getProgName)
 
 -- Internal
 import Paths_hpc_codecov     (version)
@@ -35,17 +38,24 @@ data Options = Options
   , optShowHelp    :: Bool
   } deriving (Eq, Show)
 
--- | The default 'Options'.
-defaultOptions :: Options
-defaultOptions = Options
+-- | Empty 'Options'.
+emptyOptions :: Options
+emptyOptions = Options
   { optTix = Nothing
   , optMixDirs = []
-  , optSrcDirs = [""]
+  , optSrcDirs = []
   , optExcludes = []
   , optOutFile = Nothing
   , optVerbose = False
   , optShowVersion = False
   , optShowHelp = False
+  }
+
+-- | The default 'Options'.
+defaultOptions :: Options
+defaultOptions = emptyOptions
+  { optMixDirs = [".hpc"]
+  , optSrcDirs = [""]
   }
 
 -- | Commandline option oracle.
@@ -54,18 +64,21 @@ options =
   [ Option ['m'] ["mixdir"]
             (ReqArg (\d o -> o {optMixDirs = d : optMixDirs o})
                     "DIR")
-            ".mix file directory, can repeat"
+            ".mix file directory, can repeat\n\
+            \default is .hpc"
   , Option ['s'] ["srcdir"]
            (ReqArg (\d o -> o {optSrcDirs = d : optSrcDirs o})
                    "DIR")
-           "source directory, can repeat"
+           "source directory, can repeat\n\
+           \default is current directory"
   , Option ['x'] ["exclude"]
            (ReqArg (\m o -> o {optExcludes = m : optExcludes o})
                    "MODULE")
            "module name to exclude, can repeat"
   , Option ['o'] ["out"]
            (ReqArg (\p o -> o {optOutFile = Just p}) "FILE")
-           "output file, default is stdout"
+           "output file\n\
+           \default is stdout"
   , Option [] ["verbose"]
            (NoArg (\o -> o {optVerbose = True}))
            "show verbose output"
@@ -86,22 +99,42 @@ parseOptions args =
       -- Not returning error messages with missing ".tix" file
       -- argument at this point, to show help and version messages
       -- without specifying ".tix" file.
-      let opts = foldr (.) id flags $ defaultOptions
+      let opts0 = foldr (.) id flags $ emptyOptions
+          opts1 = fillDefaultIfNotGiven opts0
       in  case rest of
-            []      -> Right opts
-            (tix:_) -> Right (opts {optTix = Just tix})
+            []      -> Right opts1
+            (tix:_) -> Right (opts1 {optTix = Just tix})
     (_, _, errs)  -> Left errs
+
+fillDefaultIfNotGiven :: Options -> Options
+fillDefaultIfNotGiven opts = opts
+  { optMixDirs = fillIf null optMixDirs
+  , optSrcDirs = fillIf null optSrcDirs
+  }
+ where
+   fillIf test fld =
+      let orig = fld opts
+      in  if test orig
+             then fld defaultOptions
+             else orig
+
+-- | Print help message.
+printHelp :: IO ()
+printHelp = getProgName >>= putStrLn . helpMessage
 
 -- | Help message for command line output.
 helpMessage :: String -- ^ Executable program name.
             -> String
 helpMessage name = usageInfo header options
   where
-    header = "USAGE: " ++ name ++ " [OPTIONS] TIX_FILE\n\
+    header = "\
+\Generate Codecov JSON coverage report from .tix and .mix files\n\
 \\n\
-\  Generate codecov.io coverage report from hpc tix and mix files \n\
+\Usage: \n\
 \\n\
-\OPTIONS:\n"
+\   " ++ name ++ " [OPTIONS] TIX_FILE\n\
+\\n\
+\Options:\n"
 
 -- | String representation of version number.
 versionString :: String
