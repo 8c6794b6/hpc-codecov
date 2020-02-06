@@ -5,8 +5,6 @@
 *.dyn_o
 *~
 *#
-.hpc
-a.out
 
 # For cabal v1 build
 dist/
@@ -20,6 +18,8 @@ cabal.project.local
 stack.yaml.lock
 
 # Miscellaneous
-reports
+.hpc
+a.out
+codecov.json
 hpc-codecov.tix
 tmp/
