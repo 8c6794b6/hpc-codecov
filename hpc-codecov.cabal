@@ -15,9 +15,8 @@ description:
   The hpc-codecov package contains an executable and library codes for
   generating <https://codecov.io Codeocv> JSON coverage report from
   @.tix@ and @.mix@ files made with
-  <https://hackage.haskell.org/package/hpc hpc>
-  .
-  See <https://github.com/8c6794b6/hpc-codecov#readme README> for
+  <https://hackage.haskell.org/package/hpc hpc>.  See the
+  <https://github.com/8c6794b6/hpc-codecov#readme README> for
   more info.
 
 extra-source-files:
