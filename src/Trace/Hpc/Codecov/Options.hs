@@ -1,10 +1,11 @@
+{-# OPTIONS_HADDOCK hide #-}
 -- |
 -- Module:     Trace.Hpc.Codecov.Options
 -- Copyright:  (c) 2020 8c6794b6
 -- License:    BSD3
 -- Maintainer: 8c6794b6 <8c6794b6@gmail.com>
 --
--- Options for generating Codecov test coverage report.
+-- Command line options for generating Codecov test coverage report.
 
 module Trace.Hpc.Codecov.Options
   (
@@ -16,6 +17,9 @@ module Trace.Hpc.Codecov.Options
     -- * Command line parser for 'Options'
   , parseOptions
 
+    -- * Converter
+  , opt2rpt
+
     -- * Help message and version number
   , printHelp
   , printVersion
@@ -23,15 +27,16 @@ module Trace.Hpc.Codecov.Options
   ) where
 
 -- base
-import Control.Exception       (throw)
-import Data.Version            (showVersion)
-import System.Console.GetOpt   (ArgDescr (..), ArgOrder (..),
-                                OptDescr (..), getOpt, usageInfo)
-import System.Environment      (getProgName)
+import Control.Exception        (throw)
+import Data.Version             (showVersion)
+import System.Console.GetOpt    (ArgDescr (..), ArgOrder (..),
+                                 OptDescr (..), getOpt, usageInfo)
+import System.Environment       (getProgName)
 
 -- Internal
-import Paths_hpc_codecov       (version)
+import Paths_hpc_codecov        (version)
 import Trace.Hpc.Codecov.Error
+import Trace.Hpc.Codecov.Report
 
 -- | Options for generating test coverage report.
 data Options = Options
@@ -140,6 +145,17 @@ fillDefaultIfNotGiven opts = opts
       in  if test orig
              then fld defaultOptions
              else orig
+
+-- | Make a 'Report' value from 'Optoins'.
+opt2rpt :: Options -> Report
+opt2rpt opt = Report
+  { reportTix = optTix opt
+  , reportMixDirs = optMixDirs opt
+  , reportSrcDirs = optSrcDirs opt
+  , reportExcludes = optExcludes opt
+  , reportOutFile = optOutFile opt
+  , reportVerbose = optVerbose opt
+  }
 
 -- | Print help messages.
 printHelp :: IO ()

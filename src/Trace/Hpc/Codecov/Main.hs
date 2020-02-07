@@ -24,8 +24,8 @@ main = withBriefUsageOnError (getArgs >>= go)
   where
     go args =
       case parseOptions args of
-        Right opts | optShowHelp opts -> printHelp
+        Right opts | optShowHelp opts    -> printHelp
                    | optShowVersion opts -> printVersion
                    | optShowNumeric opts -> putStrLn versionString
-                   | otherwise -> genReport opts
+                   | otherwise           -> genReport (opt2rpt opts)
         Left errs -> throwIO (InvalidArgs errs)

@@ -9,7 +9,8 @@
 
 module Trace.Hpc.Codecov.Report
   ( -- * Types
-    CoverageEntry(..)
+    Report(..)
+  , CoverageEntry(..)
   , LineHits
   , Hit(..)
 
@@ -20,42 +21,41 @@ module Trace.Hpc.Codecov.Report
   ) where
 
 -- base
-import Control.Exception         (ErrorCall, handle, throwIO)
-import Control.Monad             (when)
-import Control.Monad.ST          (ST)
-import Data.List                 (foldl', intersperse)
-import System.IO                 (IOMode (..), hPutStrLn, stderr, stdout,
-                                  withFile)
+import Control.Exception       (ErrorCall, handle, throwIO)
+import Control.Monad           (when)
+import Control.Monad.ST        (ST)
+import Data.List               (foldl', intersperse)
+import System.IO               (IOMode (..), hPutStrLn, stderr, stdout,
+                                withFile)
 #if !MIN_VERSION_base(4,11,0)
-import Data.Monoid               ((<>))
+import Data.Monoid             ((<>))
 #endif
 
 -- array
-import Data.Array.Base           (unsafeAt)
-import Data.Array.IArray         (bounds, listArray, range, (!))
-import Data.Array.MArray         (newArray, readArray, writeArray)
-import Data.Array.ST             (STUArray, runSTUArray)
-import Data.Array.Unboxed        (UArray)
+import Data.Array.Base         (unsafeAt)
+import Data.Array.IArray       (bounds, listArray, range, (!))
+import Data.Array.MArray       (newArray, readArray, writeArray)
+import Data.Array.ST           (STUArray, runSTUArray)
+import Data.Array.Unboxed      (UArray)
 
 -- bytestring
-import Data.ByteString.Builder   (Builder, char7, hPutBuilder, intDec,
-                                  string7, stringUtf8)
+import Data.ByteString.Builder (Builder, char7, hPutBuilder, intDec,
+                                string7, stringUtf8)
 
 -- directory
-import System.Directory          (doesFileExist)
+import System.Directory        (doesFileExist)
 
 -- filepath
-import System.FilePath           ((<.>), (</>))
+import System.FilePath         ((<.>), (</>))
 
 -- hpc
-import Trace.Hpc.Mix             (BoxLabel (..), Mix (..), MixEntry,
-                                  readMix)
-import Trace.Hpc.Tix             (Tix (..), TixModule (..), readTix)
-import Trace.Hpc.Util            (HpcPos, fromHpcPos)
+import Trace.Hpc.Mix           (BoxLabel (..), Mix (..), MixEntry, readMix)
+import Trace.Hpc.Tix           (Tix (..), TixModule (..), readTix)
+import Trace.Hpc.Util          (HpcPos, fromHpcPos)
 
 -- Internal
 import Trace.Hpc.Codecov.Error
-import Trace.Hpc.Codecov.Options
+-- import Trace.Hpc.Codecov.Options
 
 
 -- ------------------------------------------------------------------------
@@ -63,6 +63,23 @@ import Trace.Hpc.Codecov.Options
 -- Exported
 --
 -- ------------------------------------------------------------------------
+
+-- | Data type to hold information for generating test coverage
+-- report.
+data Report = Report
+ { reportTix      :: FilePath
+   -- ^ Input tix file.
+ , reportMixDirs  :: [FilePath]
+   -- ^ Directory containing mix files referred by the tix file.
+ , reportSrcDirs  :: [FilePath]
+   -- ^ Directory containing source codes referred by the mix files.
+ , reportExcludes :: [String]
+   -- ^ Module name strings to exclude from coverage report.
+ , reportOutFile  :: Maybe FilePath
+   -- ^ Output file to write JSON report, if given.
+ , reportVerbose  :: Bool
+   -- ^ Flag for showing verbose message during report generation.
+ } deriving (Eq, Show)
 
 -- | Single file entry in coverage report.
 --
@@ -85,19 +102,19 @@ data Hit
   deriving (Eq, Show)
 
 -- | Generate report data from options.
-genReport :: Options -> IO ()
-genReport opts =
-  do entries <- genCoverageEntries opts
-     let mb_out = optOutFile opts
+genReport :: Report -> IO ()
+genReport rpt =
+  do entries <- genCoverageEntries rpt
+     let mb_out = reportOutFile rpt
          oname = maybe "stdout" show mb_out
-     say opts ("Writing JSON report to " ++ oname)
+     say rpt ("Writing JSON report to " ++ oname)
      emitCoverageJSON mb_out entries
-     say opts "Done"
+     say rpt "Done"
 
 -- | Generate test coverage entries.
-genCoverageEntries :: Options -> IO [CoverageEntry]
-genCoverageEntries opts =
-  readTixFile opts (optTix opts) >>= tixToCoverage opts
+genCoverageEntries :: Report -> IO [CoverageEntry]
+genCoverageEntries rpt =
+  readTixFile rpt (reportTix rpt) >>= tixToCoverage rpt
 
 -- | Emit simple coverage JSON data.
 emitCoverageJSON ::
@@ -134,18 +151,18 @@ buildJSON entries = contents
       where
         k = key (intDec n)
 
-tixToCoverage :: Options -> Tix -> IO [CoverageEntry]
-tixToCoverage opts (Tix tms) = mapM (tixModuleToCoverage opts)
-                                    (excludeModules opts tms)
+tixToCoverage :: Report -> Tix -> IO [CoverageEntry]
+tixToCoverage rpt (Tix tms) = mapM (tixModuleToCoverage rpt)
+                                   (excludeModules rpt tms)
 
-tixModuleToCoverage :: Options -> TixModule -> IO CoverageEntry
-tixModuleToCoverage opts tm@(TixModule name _hash _count _ixs) =
-  do say opts ("Search mix:   " ++ name)
-     Mix path _ _ _ entries <- readMixFile (optMixDirs opts) tm
-     say opts ("Found mix:    "++ path)
+tixModuleToCoverage :: Report -> TixModule -> IO CoverageEntry
+tixModuleToCoverage rpt tm@(TixModule name _hash _count _ixs) =
+  do say rpt ("Search mix:   " ++ name)
+     Mix path _ _ _ entries <- readMixFile (reportMixDirs rpt) tm
+     say rpt ("Found mix:    "++ path)
      let Info _ min_line max_line hits = makeInfo tm entries
          lineHits = makeLineHits min_line max_line hits
-     path' <- ensureSrcPath opts path
+     path' <- ensureSrcPath rpt path
      return (CoverageEntry { ce_filename = path'
                            , ce_hits = lineHits })
 
@@ -156,24 +173,24 @@ tixModuleToCoverage opts tm@(TixModule name _hash _count _ixs) =
 --
 -- ------------------------------------------------------------------------
 
--- | Exclude modules specified in given 'Options'.
-excludeModules :: Options -> [TixModule] -> [TixModule]
-excludeModules opts = filter exclude
+-- | Exclude modules specified in given 'Report'.
+excludeModules :: Report -> [TixModule] -> [TixModule]
+excludeModules rpt = filter exclude
   where
     exclude (TixModule pkg_slash_name _ _ _) =
       let modname = case break (== '/') pkg_slash_name of
                       (_, '/':name) -> name
                       (name, _)     -> name
-      in  notElem modname (optExcludes opts)
+      in  notElem modname (reportExcludes rpt)
 
 -- | Read tix file from file path, return a 'Tix' data or throw
 -- a 'TixNotFound' exception.
-readTixFile :: Options -> FilePath -> IO Tix
-readTixFile opts path =
+readTixFile :: Report -> FilePath -> IO Tix
+readTixFile rpt path =
   do mb_tix <- readTix path
      case mb_tix of
        Nothing  -> throwIO (TixNotFound path)
-       Just tix -> say opts ("Found tix file: " ++ path) >> return tix
+       Just tix -> say rpt ("Found tix file: " ++ path) >> return tix
 
 -- | Search mix file under given directories, return a 'Mix' data or
 -- throw a 'MixNotFound' exception.
@@ -187,21 +204,21 @@ readMixFile dirs tm@(TixModule name _h _c _i) =
 
 -- | Ensure the given source file exist, return the ensured 'FilePath'
 -- or throw a 'SrcNotFound' exception.
-ensureSrcPath :: Options -> FilePath -> IO FilePath
-ensureSrcPath opts path = go [] (optSrcDirs opts)
+ensureSrcPath :: Report -> FilePath -> IO FilePath
+ensureSrcPath rpt path = go [] (reportSrcDirs rpt)
   where
     go acc [] = throwIO (SrcNotFound path acc)
     go acc (dir:dirs) =
       do let path' = dir </> path
          exist <- doesFileExist path'
          if exist
-            then do say opts ("Found source: " ++ path')
+            then do say rpt ("Found source: " ++ path')
                     return path'
             else go (path':acc) dirs
 
 -- | Print given message to 'stderr' when the verbose flag is 'True'.
-say :: Options -> String -> IO ()
-say opts msg = when (optVerbose opts) (hPutStrLn stderr msg)
+say :: Report -> String -> IO ()
+say rpt msg = when (reportVerbose rpt) (hPutStrLn stderr msg)
 
 -- | Internal type synonym to represent code line hit.
 type Tick = Int
