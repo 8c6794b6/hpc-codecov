@@ -4,7 +4,7 @@
 -- License:    BSD3
 -- Maintainer: 8c6794b6 <8c6794b6@gmail.com>
 --
--- Options for generating Codecov report.
+-- Options for generating Codecov test coverage report.
 
 module Trace.Hpc.Codecov.Options
   (
@@ -38,7 +38,7 @@ data Options = Options
   { optTix         :: FilePath
     -- ^ Input tix file.
   , optMixDirs     :: [FilePath]
-    -- ^ Directory containing mix files.
+    -- ^ Directory containing mix files referred by the tix file.
   , optSrcDirs     :: [FilePath]
     -- ^ Directory containing source codes referred by the mix files.
   , optExcludes    :: [String]

@@ -33,7 +33,7 @@ withBriefUsageOnError = handle handler
          putStrLn ("Run '" ++ name ++ " --help' for usage.")
          exitFailure
 
--- | Exceptions thrown from @hpc-codecov@.
+-- | Exceptions thrown during coverage report generation.
 data HpcCodecovError
   = NoTixFile
    -- ^ Tix file path was not given.

@@ -11,7 +11,7 @@ module Trace.Hpc.Codecov.Report
   ( -- * Types
     CoverageEntry(..)
   , LineHits
-  , HitTag
+  , Hit(..)
 
     -- * Functions
   , genReport
@@ -32,7 +32,7 @@ import Data.Monoid               ((<>))
 
 -- array
 import Data.Array.Base           (unsafeAt)
-import Data.Array.IArray         (assocs, listArray)
+import Data.Array.IArray         (bounds, listArray, range, (!))
 import Data.Array.MArray         (newArray, readArray, writeArray)
 import Data.Array.ST             (STUArray, runSTUArray)
 import Data.Array.Unboxed        (UArray)
@@ -75,17 +75,14 @@ data CoverageEntry =
                 } deriving (Eq, Show)
 
 -- | Pair of line number and hit tag.
---
-type LineHits = [(Int, HitTag)]
+type LineHits = [(Int, Hit)]
 
--- | Hit tag:
---
--- * @-1@ for irrelevant line
--- * @0@ for missed line
--- * @1@ for partially covered line
--- * @2@ for fully covered line
---
-type HitTag = Int
+-- | Data type to represent coverage of source code line.
+data Hit
+  = Missed  -- ^ The line is not covered at all.
+  | Partial -- ^ The line is partially covered.
+  | Full    -- ^ The line is fully covered.
+  deriving (Eq, Show)
 
 -- | Generate report data from options.
 genReport :: Options -> IO ()
@@ -110,9 +107,8 @@ emitCoverageJSON ::
   -> IO ()
 emitCoverageJSON mb_outfile entries = wrap emit
   where
-    wrap = maybe ($ stdout) (flip withFile WriteMode) mb_outfile
+    wrap = maybe ($ stdout) (`withFile` WriteMode) mb_outfile
     emit = flip hPutBuilder (buildJSON entries)
-
 
 -- | Build simple JSON report from coverage entries.
 buildJSON :: [CoverageEntry] -> Builder
@@ -132,10 +128,9 @@ buildJSON entries = contents
     comma = char7 ','
     hit (n, tag) =
       case tag of
-        0 -> k <> char7 '0'
-        1 -> k <> dquote (char7 '1' <> char7 '/' <> char7 '2')
-        2 -> k <> char7 '1'
-        _ -> mempty
+        Missed  -> k <> char7 '0'
+        Partial -> k <> dquote (char7 '1' <> char7 '/' <> char7 '2')
+        Full    -> k <> char7 '1'
       where
         k = key (intDec n)
 
@@ -163,7 +158,7 @@ tixModuleToCoverage opts tm@(TixModule name _hash _count _ixs) =
 
 -- | Exclude modules specified in given 'Options'.
 excludeModules :: Options -> [TixModule] -> [TixModule]
-excludeModules opts tms = filter exclude tms
+excludeModules opts = filter exclude
   where
     exclude (TixModule pkg_slash_name _ _ _) =
       let modname = case break (== '/') pkg_slash_name of
@@ -208,13 +203,8 @@ ensureSrcPath opts path = go [] (optSrcDirs opts)
 say :: Options -> String -> IO ()
 say opts msg = when (optVerbose opts) (hPutStrLn stderr msg)
 
--- | Internal data type to represent code coverage line hit.
-data Tick
-  = NotTicked
-  | TickedOnlyTrue
-  | TickedOnlyFalse
-  | IsTicked
-  deriving (Eq, Show)
+-- | Internal type synonym to represent code line hit.
+type Tick = Int
 
 -- | Internal type used for accumulating mix entries.
 data Info =
@@ -225,10 +215,8 @@ data Info =
 
 -- | Make line hits from intermediate info.
 makeLineHits :: Int -> Int -> [(HpcPos, Tick)] -> LineHits
-makeLineHits min_line max_line hits =
-  filter ((>= 0) . snd) $ assocs (runSTUArray work)
+makeLineHits min_line max_line hits = ticksToHits (runSTUArray work)
   where
-    work :: ST s (STUArray s Int Int)
     work =
       do arr <- newArray (min_line, max_line) ignored
          mapM_ (updateHit arr) hits
@@ -241,14 +229,23 @@ makeLineHits min_line max_line hits =
       do prev <- readArray arr i
          writeArray arr i (mergeEntry prev hit)
     mergeEntry prev hit
-      | isIgnored prev               = hit'
-      | isMissed prev, isMissed hit' = missed
-      | isFull prev, isFull hit'     = full
-      | otherwise                    = partial
-      where
-        hit' = fromHit hit
+      | isIgnored prev              = hit
+      | isMissed prev, isMissed hit = missed
+      | isFull prev, isFull hit     = full
+      | otherwise                   = partial
 
-ignored, missed, partial, full :: Int
+-- | Convert array of ticks to list of hits.
+ticksToHits :: UArray Int Tick -> LineHits
+ticksToHits arr = foldr f [] (range (bounds arr))
+  where
+    f i acc =
+      case arr ! i of
+        tck | isIgnored tck -> acc
+            | isMissed tck  -> (i, Missed) : acc
+            | isFull tck    -> (i, Full) : acc
+            | otherwise     -> (i, Partial) : acc
+
+ignored, missed, partial, full :: Tick
 ignored = -1
 missed = 0
 partial = 1
@@ -263,13 +260,11 @@ isMissed = (== missed)
 isFull :: Int -> Bool
 isFull = (== full)
 
-fromHit :: Tick -> Int
-fromHit hit =
-  case hit of
-    NotTicked       -> missed
-    TickedOnlyTrue  -> partial
-    TickedOnlyFalse -> partial
-    IsTicked        -> full
+notTicked, tickedOnlyTrue, tickedOnlyFalse, ticked :: Tick
+notTicked = missed
+tickedOnlyTrue = partial
+tickedOnlyFalse = partial
+ticked = full
 
 -- See also: "utils/hpc/HpcMarkup.hs" in "ghc" git repository.
 makeInfo :: TixModule -> [MixEntry] -> Info
@@ -279,11 +274,12 @@ makeInfo tm = foldl' f z
     f (Info i min_line max_line acc) (pos, boxLabel) =
       let binBox = case (isTicked i, isTicked (i+1)) of
                      (False, False) -> acc
-                     (True,  False) -> (pos, TickedOnlyTrue) : acc
-                     (False, True)  -> (pos, TickedOnlyFalse) : acc
+                     (True,  False) -> (pos, tickedOnlyTrue) : acc
+                     (False, True)  -> (pos, tickedOnlyFalse) : acc
                      (True, True)   -> acc
-          tickBox | isTicked i = (pos, IsTicked) : acc
-                  | otherwise  = (pos, NotTicked) : acc
+          tickBox = if isTicked i
+                       then (pos, ticked) : acc
+                       else (pos, notTicked) : acc
           acc' = case boxLabel of
                    ExpBox {}      -> tickBox
                    TopLevelBox {} -> tickBox
@@ -291,10 +287,10 @@ makeInfo tm = foldl' f z
                    BinBox _ True  -> binBox
                    _              -> acc
           (ls, _, le, _) = fromHpcPos pos
-      in (Info (i+1) (min ls min_line) (max le max_line) acc')
+      in Info (i+1) (min ls min_line) (max le max_line) acc'
 
     -- Hope that mix file does not contain out of bound index.
-    isTicked n = (unsafeAt arr_tix n) /= 0
+    isTicked n = unsafeAt arr_tix n /= 0
 
     arr_tix :: UArray Int Int
     arr_tix = listArray (0, size - 1) (map fromIntegral tixs)
