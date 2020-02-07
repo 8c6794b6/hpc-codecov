@@ -13,7 +13,7 @@ module Trace.Hpc.Codecov.Options
   , defaultOptions
   , emptyOptions
 
-    -- * Command line parser for 'Option'
+    -- * Command line parser for 'Options'
   , parseOptions
 
     -- * Help message and version number
@@ -23,17 +23,19 @@ module Trace.Hpc.Codecov.Options
   ) where
 
 -- base
-import Data.Version          (showVersion)
-import System.Console.GetOpt (ArgDescr (..), ArgOrder (..), OptDescr (..),
-                              getOpt, usageInfo)
-import System.Environment    (getProgName)
+import Control.Exception       (throw)
+import Data.Version            (showVersion)
+import System.Console.GetOpt   (ArgDescr (..), ArgOrder (..),
+                                OptDescr (..), getOpt, usageInfo)
+import System.Environment      (getProgName)
 
 -- Internal
-import Paths_hpc_codecov     (version)
+import Paths_hpc_codecov       (version)
+import Trace.Hpc.Codecov.Error
 
 -- | Options for generating test coverage report.
 data Options = Options
-  { optTix         :: Maybe FilePath
+  { optTix         :: FilePath
     -- ^ Input tix file.
   , optMixDirs     :: [FilePath]
     -- ^ Directory containing mix files.
@@ -42,7 +44,7 @@ data Options = Options
   , optExcludes    :: [String]
     -- ^ Module name strings to exclude from coverage report.
   , optOutFile     :: Maybe FilePath
-    -- ^ Output file to write JSON file, if given.
+    -- ^ Output file to write JSON report, if given.
   , optVerbose     :: Bool
     -- ^ Flag for showing verbose message during coverage report
     -- generation.
@@ -57,7 +59,7 @@ data Options = Options
 -- | Empty 'Options'.
 emptyOptions :: Options
 emptyOptions = Options
-  { optTix = Nothing
+  { optTix = throw NoTixFile
   , optMixDirs = []
   , optSrcDirs = []
   , optExcludes = []
@@ -124,7 +126,7 @@ parseOptions args =
           opts1 = fillDefaultIfNotGiven opts0
       in  case rest of
             []      -> Right opts1
-            (tix:_) -> Right (opts1 {optTix = Just tix})
+            (tix:_) -> Right (opts1 {optTix = tix})
     (_, _, errs)  -> Left errs
 
 fillDefaultIfNotGiven :: Options -> Options

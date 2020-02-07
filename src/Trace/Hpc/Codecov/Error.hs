@@ -10,15 +10,11 @@ module Trace.Hpc.Codecov.Error
   (
     -- * Exception data type and handler
     HpcCodecovError(..)
-  , withHpcCodecovHandler
-
-    -- * Re-exports
-  , throw
-  , throwIO
+  , withBriefUsageOnError
   ) where
 
 -- base
-import Control.Exception  (Exception (..), handle, throw, throwIO)
+import Control.Exception  (Exception (..), handle)
 import System.Environment (getProgName)
 import System.Exit        (exitFailure)
 
@@ -26,9 +22,9 @@ import System.Exit        (exitFailure)
 --
 -- The handler will show a brief usage and call 'exitFailure' when an
 -- exception was caught.
-withHpcCodecovHandler :: IO a   -- ^ Action to perform.
+withBriefUsageOnError :: IO a   -- ^ Action to perform.
                       -> IO a
-withHpcCodecovHandler = handle handler
+withBriefUsageOnError = handle handler
   where
     handler :: HpcCodecovError -> IO a
     handler e =
@@ -40,17 +36,18 @@ withHpcCodecovHandler = handle handler
 -- | Exceptions thrown from @hpc-codecov@.
 data HpcCodecovError
   = NoTixFile
-   -- ^ Tix file path was not given
+   -- ^ Tix file path was not given.
   | TixNotFound FilePath
    -- ^ Tix file path was given, but not found.
   | MixNotFound FilePath [FilePath]
    -- ^ Mix file not found. The first field is the path specified by a
    -- tix file. The second is the searched paths.
   | SrcNotFound FilePath [FilePath]
-   -- ^ Like 'MixNotFound', but for source code.
+   -- ^ Like 'MixNotFound', but for source code specified by a mix
+   -- file.
   | InvalidArgs [String]
-   -- ^ Some misuse of command line argument, e.g., required value not
-   -- specified for certain flag.
+   -- ^ Some errors in command line argument, e.g., required value not
+   -- specified.
   deriving (Show)
 
 instance Exception HpcCodecovError where

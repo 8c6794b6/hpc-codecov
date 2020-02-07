@@ -7,21 +7,32 @@
 --
 -- Generate Codecov report data.
 
-module Trace.Hpc.Codecov.Report (genReport) where
+module Trace.Hpc.Codecov.Report
+  ( -- * Types
+    CoverageEntry(..)
+  , LineHits
+  , HitTag
+
+    -- * Functions
+  , genReport
+  , genCoverageEntries
+  , emitCoverageJSON
+  ) where
 
 -- base
-import Control.Exception         (ErrorCall, bracket, handle)
+import Control.Exception         (ErrorCall, handle, throwIO)
 import Control.Monad             (when)
 import Control.Monad.ST          (ST)
 import Data.List                 (foldl', intersperse)
-import System.IO                 (IOMode (..), hClose, hPutStrLn, openFile,
-                                  stderr, stdout)
+import System.IO                 (IOMode (..), hPutStrLn, stderr, stdout,
+                                  withFile)
 #if !MIN_VERSION_base(4,11,0)
 import Data.Monoid               ((<>))
 #endif
 
 -- array
-import Data.Array.IArray         (assocs, listArray, (!))
+import Data.Array.Base           (unsafeAt)
+import Data.Array.IArray         (assocs, listArray)
 import Data.Array.MArray         (newArray, readArray, writeArray)
 import Data.Array.ST             (STUArray, runSTUArray)
 import Data.Array.Unboxed        (UArray)
@@ -49,32 +60,59 @@ import Trace.Hpc.Codecov.Options
 
 -- ------------------------------------------------------------------------
 --
--- Report generator function
+-- Exported
 --
 -- ------------------------------------------------------------------------
 
+-- | Single file entry in coverage report.
+--
+-- See the
+-- <https://docs.codecov.io/reference#section-codecov-json-report-format Codecov API>
+-- for detail.
+data CoverageEntry =
+  CoverageEntry { ce_filename :: FilePath -- ^ Source code file name.
+                , ce_hits     :: LineHits -- ^ Line hits of the file.
+                } deriving (Eq, Show)
+
+-- | Pair of line number and hit tag.
+--
+type LineHits = [(Int, HitTag)]
+
+-- | Hit tag:
+--
+-- * @-1@ for irrelevant line
+-- * @0@ for missed line
+-- * @1@ for partially covered line
+-- * @2@ for fully covered line
+--
+type HitTag = Int
+
 -- | Generate report data from options.
 genReport :: Options -> IO ()
-genReport opts = maybe err work (optTix opts)
-  where
-    err = throwIO NoTixFile
-    work path = readTixFile opts path >>=
-                tixToCoverage opts >>=
-                emitCoverageJSON opts
+genReport opts =
+  do entries <- genCoverageEntries opts
+     let mb_out = optOutFile opts
+         oname = maybe "stdout" show mb_out
+     say opts ("Writing JSON report to " ++ oname)
+     emitCoverageJSON mb_out entries
+     say opts "Done"
+
+-- | Generate test coverage entries.
+genCoverageEntries :: Options -> IO [CoverageEntry]
+genCoverageEntries opts =
+  readTixFile opts (optTix opts) >>= tixToCoverage opts
 
 -- | Emit simple coverage JSON data.
-emitCoverageJSON :: Options -> [CoverageEntry] -> IO ()
-emitCoverageJSON opts entries = bracket acquire cleanup work
+emitCoverageJSON ::
+  Maybe FilePath -- ^ 'Just' output file name, or 'Nothing' for
+                 -- 'stdout'.
+  -> [CoverageEntry] -- ^ Coverage entries to write.
+  -> IO ()
+emitCoverageJSON mb_outfile entries = wrap emit
   where
-    work hdl = hPutBuilder hdl (buildJSON entries)
-    (acquire, cleanup) =
-      case optOutFile opts of
-        Just path -> (writeToFile path, doneWritingFile)
-        Nothing   -> (return stdout, const (say opts "Done"))
-    writeToFile path =
-      do say opts ("Writing JSON report to \"" ++ path ++ "\"")
-         openFile path WriteMode
-    doneWritingFile hdl = hClose hdl >> say opts "Done"
+    wrap = maybe ($ stdout) (flip withFile WriteMode) mb_outfile
+    emit = flip hPutBuilder (buildJSON entries)
+
 
 -- | Build simple JSON report from coverage entries.
 buildJSON :: [CoverageEntry] -> Builder
@@ -105,16 +143,6 @@ tixToCoverage :: Options -> Tix -> IO [CoverageEntry]
 tixToCoverage opts (Tix tms) = mapM (tixModuleToCoverage opts)
                                     (excludeModules opts tms)
 
--- | Exclude modules specified in given 'Options'.
-excludeModules :: Options -> [TixModule] -> [TixModule]
-excludeModules opts tms = filter exclude tms
-  where
-    exclude (TixModule pkg_slash_name _ _ _) =
-      let modname = case break (== '/') pkg_slash_name of
-                      (_, '/':name) -> name
-                      (name, _)     -> name
-      in  notElem modname (optExcludes opts)
-
 tixModuleToCoverage :: Options -> TixModule -> IO CoverageEntry
 tixModuleToCoverage opts tm@(TixModule name _hash _count _ixs) =
   do say opts ("Search mix:   " ++ name)
@@ -126,8 +154,25 @@ tixModuleToCoverage opts tm@(TixModule name _hash _count _ixs) =
      return (CoverageEntry { ce_filename = path'
                            , ce_hits = lineHits })
 
+
+-- ------------------------------------------------------------------------
+--
+-- Internal
+--
+-- ------------------------------------------------------------------------
+
+-- | Exclude modules specified in given 'Options'.
+excludeModules :: Options -> [TixModule] -> [TixModule]
+excludeModules opts tms = filter exclude tms
+  where
+    exclude (TixModule pkg_slash_name _ _ _) =
+      let modname = case break (== '/') pkg_slash_name of
+                      (_, '/':name) -> name
+                      (name, _)     -> name
+      in  notElem modname (optExcludes opts)
+
 -- | Read tix file from file path, return a 'Tix' data or throw
--- 'TixNotFound' exception.
+-- a 'TixNotFound' exception.
 readTixFile :: Options -> FilePath -> IO Tix
 readTixFile opts path =
   do mb_tix <- readTix path
@@ -135,6 +180,8 @@ readTixFile opts path =
        Nothing  -> throwIO (TixNotFound path)
        Just tix -> say opts ("Found tix file: " ++ path) >> return tix
 
+-- | Search mix file under given directories, return a 'Mix' data or
+-- throw a 'MixNotFound' exception.
 readMixFile :: [FilePath] -> TixModule -> IO Mix
 readMixFile dirs tm@(TixModule name _h _c _i) =
   handle handler (readMix dirs (Right tm))
@@ -143,6 +190,8 @@ readMixFile dirs tm@(TixModule name _h _c _i) =
     handler _ = throwIO (MixNotFound name dirs')
     dirs' = map (</> (name <.> "mix")) dirs
 
+-- | Ensure the given source file exist, return the ensured 'FilePath'
+-- or throw a 'SrcNotFound' exception.
 ensureSrcPath :: Options -> FilePath -> IO FilePath
 ensureSrcPath opts path = go [] (optSrcDirs opts)
   where
@@ -155,23 +204,11 @@ ensureSrcPath opts path = go [] (optSrcDirs opts)
                     return path'
             else go (path':acc) dirs
 
+-- | Print given message to 'stderr' when the verbose flag is 'True'.
+say :: Options -> String -> IO ()
+say opts msg = when (optVerbose opts) (hPutStrLn stderr msg)
 
--- ------------------------------------------------------------------------
---
--- Line hits
---
--- ------------------------------------------------------------------------
-
--- | Entry of single file in coverage report.
-data CoverageEntry =
-  CoverageEntry { ce_filename :: FilePath -- ^ Source code file name.
-                , ce_hits     :: LineHits -- ^ Line hits of the file.
-                } deriving (Eq, Show)
-
--- | Pair of line number and hit tag.
-type LineHits = [(Int, Int)]
-
--- | Data type to represent code coverage line hit.
+-- | Internal data type to represent code coverage line hit.
 data Tick
   = NotTicked
   | TickedOnlyTrue
@@ -193,7 +230,7 @@ makeLineHits min_line max_line hits =
   where
     work :: ST s (STUArray s Int Int)
     work =
-      do arr <- newArray (min_line, max_line) (-1)
+      do arr <- newArray (min_line, max_line) ignored
          mapM_ (updateHit arr) hits
          return arr
     updateHit arr (pos, hit) =
@@ -201,8 +238,8 @@ makeLineHits min_line max_line hits =
       in  updateOne arr hit ls
     updateOne :: STUArray s Int Int -> Tick -> Int -> ST s ()
     updateOne arr hit i =
-      do current <- readArray arr i
-         writeArray arr i (mergeEntry current hit)
+      do prev <- readArray arr i
+         writeArray arr i (mergeEntry prev hit)
     mergeEntry prev hit
       | isIgnored prev               = hit'
       | isMissed prev, isMissed hit' = missed
@@ -255,17 +292,10 @@ makeInfo tm = foldl' f z
                    _              -> acc
           (ls, _, le, _) = fromHpcPos pos
       in (Info (i+1) (min ls min_line) (max le max_line) acc')
-    isTicked n = (arr_tix ! n) /= 0
+
+    -- Hope that mix file does not contain out of bound index.
+    isTicked n = (unsafeAt arr_tix n) /= 0
+
     arr_tix :: UArray Int Int
     arr_tix = listArray (0, size - 1) (map fromIntegral tixs)
     TixModule _name _hash size tixs = tm
-
-
--- ------------------------------------------------------------------------
---
--- IO messages
---
--- ------------------------------------------------------------------------
-
-say :: Options -> String -> IO ()
-say opts msg = when (optVerbose opts) (hPutStrLn stderr msg)

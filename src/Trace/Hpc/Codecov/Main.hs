@@ -10,6 +10,7 @@
 module Trace.Hpc.Codecov.Main (main) where
 
 -- base
+import Control.Exception         (throwIO)
 import System.Environment        (getArgs)
 
 -- Internal
@@ -19,7 +20,7 @@ import Trace.Hpc.Codecov.Report
 
 -- | The main function for @hpc-codecov@ executable.
 main :: IO ()
-main = withHpcCodecovHandler (getArgs >>= go)
+main = withBriefUsageOnError (getArgs >>= go)
   where
     go args =
       case parseOptions args of
