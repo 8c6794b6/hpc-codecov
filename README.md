@@ -56,22 +56,17 @@ report. Observing the contents of ``codecov.json`` with
 [``jq``](https://stedolan.github.io/jq/):
 
 ```console
-$ jq . codecov.json | head -20
+$ jq . codecov.json | head -10
 {
   "coverage": {
-    "src/Trace/Hpc/Codecov/Report.hs": {
-      "54": 1,
-      "55": "1/2",
-      "56": "1/2",
-      "57": 1,
-      "58": 1,
-      "63": "1/2",
-      "67": 1,
-      "70": 1,
-      "71": 1,
-      "72": "1/2",
-      "73": 1,
-      "77": 1,
+    "src/Trace/Hpc/Codecov/Error.hs": {
+      "27": 1,
+      "30": 1,
+      "31": 1,
+      "32": 1,
+      "33": 1,
+      "34": 1,
+      "51": 0,
 ```
 
 Send the resulting JSON report file to Codecov with the [bash
