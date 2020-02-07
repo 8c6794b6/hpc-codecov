@@ -6,29 +6,30 @@ license:             BSD3
 license-file:        LICENSE
 author:              8c6794b6
 maintainer:          8c6794b6@gmail.com
+homepage:            https://github.com/8c6794b6/hpc-codecov#readme
 copyright:           (c) 2020 8c6794b6
 category:            Test, Data
 build-type:          Simple
 
 description:
-
   The hpc-codecov package contains an executable and library codes for
-  generating <https://codecov.io Codeocv> JSON coverage report
-  from @.tix@ and @.mix@ files made by
+  generating <https://codecov.io Codeocv> JSON coverage report from
+  @.tix@ and @.mix@ files made with
   <https://hackage.haskell.org/package/hpc hpc>.
 
 extra-source-files:
   README.md
   CHANGELOG.md
   test/data/self.tar
+  test/data/reciprocal.tar
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Paths_hpc_codecov
-                       Trace.Hpc.Codecov.Error
+  exposed-modules:     Trace.Hpc.Codecov.Error
                        Trace.Hpc.Codecov.Main
                        Trace.Hpc.Codecov.Options
                        Trace.Hpc.Codecov.Report
+                       Paths_hpc_codecov
   autogen-modules:     Paths_hpc_codecov
   build-depends:       base        >= 4.10  && < 5
                      , array       >= 0.1   && < 0.6
@@ -61,6 +62,8 @@ test-suite test-main
                      , tasty       >= 1.0   && < 1.3
                      , tasty-hunit >= 0.8   && < 1.0
   default-language:    Haskell2010
-  ghc-options:         -Wall
+  ghc-options:         -Wall -threaded -rtsopts
 
--- bug-reports:
+source-repository head
+  type:     git
+  location: https://github.com/8c6794b6/hpc-codecov.git

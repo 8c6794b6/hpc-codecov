@@ -25,7 +25,7 @@ build_script:
   - cabal %CABOPTS% v2-configure --enable-test --enable-coverage
   - cabal %CABOPTS% v2-build
   - cabal %CABOPTS% v2-test
-  - cabal %CABOPTS% v2-exec -- hpc-codecov --version > v.txt
+  - cabal %CABOPTS% v2-exec -- hpc-codecov --numeric-version > v.txt
   - set /p VERSION=<v.txt
   - set G=C:\WORK\dist-newstyle\build\x86_64-windows\ghc-%GHCVER%
   - set PROJ=hpc-codecov-%VERSION%

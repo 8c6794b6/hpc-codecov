@@ -83,7 +83,7 @@ after_script:
         bash <(curl -s https://codecov.io/bash)
         ;;
       cabal)
-        VERSION=$(cabal v2-exec -- hpc-codecov --version)
+        VERSION=$(cabal v2-exec -- hpc-codecov --numeric-version)
         PROJ=hpc-codecov-$VERSION
         MIX=$(find ./dist-newstyle -name vanilla)/mix/$PROJ
         TIX=$(find ./dist-newstyle -name $PROJ.tix)

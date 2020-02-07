@@ -9,7 +9,7 @@ Status](http://img.shields.io/travis/8c6794b6/codecov-haskell/master.svg?logo=tr
 
 The ``hpc-codecov`` package contains an executable and library codes
 for generating [Codecov](https://codecov.io) JSON coverage report from
-``.tix`` and ``.mix`` files made by
+``.tix`` and ``.mix`` files made with
 [hpc](https://hackage.haskell.org/package/hpc).
 
 The ``hpc-codecov`` executable does not try to find out the location
@@ -26,8 +26,7 @@ Examples
 
 Following shows two examples for generating test coverage report of
 the ``hpc-codecov`` package itself, one with ``cabal-install``
-(version 3.0.0) Nix-style local build commands, and another with
-``stack``.
+Nix-style local build commands, and another with ``stack``.
 
 ### With cabal-install
 
@@ -35,6 +34,9 @@ First, run the tests with coverage option to generate ``.tix`` and
 ``mix`` files:
 
 ```console
+$ cabal --version
+cabal-install version 3.0.0.0
+compiled using version 3.0.0.0 of the Cabal library
 $ cabal v2-configure --enable-test --enable-coverage
 $ cabal v2-test
 ```
@@ -95,6 +97,8 @@ Codecov token.
 Build the package and run the tests with coverage option:
 
 ```console
+$ stack --numeric-version
+2.1.3
 $ stack build --test --coverage
 ```
 

@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 -- |
 -- Module:     Trace.Hpc.Codecov.Main
 -- Copyright:  (c) 2020 8c6794b6
@@ -23,6 +24,7 @@ main = withHpcCodecovHandler (getArgs >>= go)
     go args =
       case parseOptions args of
         Right opts | optShowHelp opts -> printHelp
-                   | optShowVersion opts -> putStrLn versionString
+                   | optShowVersion opts -> printVersion
+                   | optShowNumeric opts -> putStrLn versionString
                    | otherwise -> genReport opts
         Left errs -> throwIO (InvalidArgs errs)

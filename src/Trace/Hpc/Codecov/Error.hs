@@ -4,8 +4,7 @@
 -- License:    BSD3
 -- Maintainer: 8c6794b6 <8c6794b6@gmail.com>
 --
--- Errors for @hpc-codecov@.
---
+-- Error and exception related codes.
 
 module Trace.Hpc.Codecov.Error
   (
@@ -23,10 +22,9 @@ import Control.Exception  (Exception (..), handle, throw, throwIO)
 import System.Environment (getProgName)
 import System.Exit        (exitFailure)
 
--- | Run action with 'HpcCodecovError' handler.
+-- | Run the given action with a handler for 'HpcCodecovError'.
 --
--- Run the given action with a handler for 'HpcCodecovError'. The
--- handler will show a brief usage and call 'exitFailure' when an
+-- The handler will show a brief usage and call 'exitFailure' when an
 -- exception was caught.
 withHpcCodecovHandler :: IO a   -- ^ Action to perform.
                       -> IO a
@@ -42,10 +40,17 @@ withHpcCodecovHandler = handle handler
 -- | Exceptions thrown from @hpc-codecov@.
 data HpcCodecovError
   = NoTixFile
+   -- ^ Tix file path was not given
   | TixNotFound FilePath
+   -- ^ Tix file path was given, but not found.
   | MixNotFound FilePath [FilePath]
+   -- ^ Mix file not found. The first field is the path specified by a
+   -- tix file. The second is the searched paths.
   | SrcNotFound FilePath [FilePath]
+   -- ^ Like 'MixNotFound', but for source code.
   | InvalidArgs [String]
+   -- ^ Some misuse of command line argument, e.g., required value not
+   -- specified for certain flag.
   deriving (Show)
 
 instance Exception HpcCodecovError where

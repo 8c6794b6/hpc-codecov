@@ -57,6 +57,7 @@ cmdline = testGroup "cmdline"
              (shouldFail (main' ["no_such_file.tix"]))
   , testCase "help" (main' ["--help"])
   , testCase "version" (main' ["--version"])
+  , testCase "numeric-version" (main' ["--numeric-version"])
   ]
 
 selfReport :: TestTree

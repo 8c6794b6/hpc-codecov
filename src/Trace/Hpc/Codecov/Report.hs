@@ -5,8 +5,7 @@
 -- License:    BSD3
 -- Maintainer: 8c6794b6 <8c6794b6@gmail.com>
 --
--- Generate codecov.io report data
---
+-- Generate Codecov report data.
 
 module Trace.Hpc.Codecov.Report (genReport) where
 
@@ -63,15 +62,6 @@ genReport opts = maybe err work (optTix opts)
                 tixToCoverage opts >>=
                 emitCoverageJSON opts
 
--- | Read tix file from file path, return a 'Tix' data or throw
--- 'TixNotFound' exception.
-readTixFile :: Options -> FilePath -> IO Tix
-readTixFile opts path =
-  do mb_tix <- readTix path
-     case mb_tix of
-       Nothing  -> throwIO (TixNotFound path)
-       Just tix -> say opts ("Found tix file: " ++ path) >> return tix
-
 -- | Emit simple coverage JSON data.
 emitCoverageJSON :: Options -> [CoverageEntry] -> IO ()
 emitCoverageJSON opts entries = bracket acquire cleanup work
@@ -95,7 +85,7 @@ buildJSON entries = contents
               braced (listify (map report entries))) <>
       char7 '\n'
     report ce =
-      key (stringUtf8 (ce_path ce)) <>
+      key (stringUtf8 (ce_filename ce)) <>
       braced (listify (map hit (ce_hits ce)))
     key x = dquote x <> char7 ':'
     dquote x = char7 '"' <> x <> char7 '"'
@@ -133,8 +123,17 @@ tixModuleToCoverage opts tm@(TixModule name _hash _count _ixs) =
      let Info _ min_line max_line hits = makeInfo tm entries
          lineHits = makeLineHits min_line max_line hits
      path' <- ensureSrcPath opts path
-     return (CoverageEntry { ce_path = path'
+     return (CoverageEntry { ce_filename = path'
                            , ce_hits = lineHits })
+
+-- | Read tix file from file path, return a 'Tix' data or throw
+-- 'TixNotFound' exception.
+readTixFile :: Options -> FilePath -> IO Tix
+readTixFile opts path =
+  do mb_tix <- readTix path
+     case mb_tix of
+       Nothing  -> throwIO (TixNotFound path)
+       Just tix -> say opts ("Found tix file: " ++ path) >> return tix
 
 readMixFile :: [FilePath] -> TixModule -> IO Mix
 readMixFile dirs tm@(TixModule name _h _c _i) =
@@ -165,8 +164,8 @@ ensureSrcPath opts path = go [] (optSrcDirs opts)
 
 -- | Entry of single file in coverage report.
 data CoverageEntry =
-  CoverageEntry { ce_path :: FilePath
-                , ce_hits :: LineHits
+  CoverageEntry { ce_filename :: FilePath -- ^ Source code file name.
+                , ce_hits     :: LineHits -- ^ Line hits of the file.
                 } deriving (Eq, Show)
 
 -- | Pair of line number and hit tag.

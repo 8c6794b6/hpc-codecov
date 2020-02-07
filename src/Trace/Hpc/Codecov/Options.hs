@@ -4,16 +4,21 @@
 -- License:    BSD3
 -- Maintainer: 8c6794b6 <8c6794b6@gmail.com>
 --
--- Options for @hpc-codecov@.
---
+-- Options for generating Codecov report.
 
 module Trace.Hpc.Codecov.Options
-  ( Options(..)
+  (
+    -- * The Options type and predefined values
+    Options(..)
   , defaultOptions
   , emptyOptions
+
+    -- * Command line parser for 'Option'
   , parseOptions
+
+    -- * Help message and version number
   , printHelp
-  , helpMessage
+  , printVersion
   , versionString
   ) where
 
@@ -29,13 +34,24 @@ import Paths_hpc_codecov     (version)
 -- | Options for generating test coverage report.
 data Options = Options
   { optTix         :: Maybe FilePath
+    -- ^ Input tix file.
   , optMixDirs     :: [FilePath]
+    -- ^ Directory containing mix files.
   , optSrcDirs     :: [FilePath]
+    -- ^ Directory containing source codes referred by the mix files.
   , optExcludes    :: [String]
+    -- ^ Module name strings to exclude from coverage report.
   , optOutFile     :: Maybe FilePath
+    -- ^ Output file to write JSON file, if given.
   , optVerbose     :: Bool
+    -- ^ Flag for showing verbose message during coverage report
+    -- generation.
   , optShowVersion :: Bool
+    -- ^ Flag for showing version.
+  , optShowNumeric :: Bool
+    -- ^ Flag for showing numeric version.
   , optShowHelp    :: Bool
+    -- ^ Flag for showing help message.
   } deriving (Eq, Show)
 
 -- | Empty 'Options'.
@@ -48,6 +64,7 @@ emptyOptions = Options
   , optOutFile = Nothing
   , optVerbose = False
   , optShowVersion = False
+  , optShowNumeric = False
   , optShowHelp = False
   }
 
@@ -79,12 +96,15 @@ options =
            (ReqArg (\p o -> o {optOutFile = Just p}) "FILE")
            "output file\n\
            \default is stdout"
-  , Option [] ["verbose"]
+  , Option ['v'] ["verbose"]
            (NoArg (\o -> o {optVerbose = True}))
            "show verbose output"
-  , Option ['v'] ["version"]
+  , Option [] ["version"]
            (NoArg (\o -> o {optShowVersion = True}))
            "show versoin and exit"
+  , Option [] ["numeric-version"]
+           (NoArg (\o -> o {optShowNumeric = True}))
+           "show numeric version and exit"
   , Option ['h'] ["help"]
            (NoArg (\o -> o {optShowHelp = True}))
            "show this help"
@@ -92,7 +112,8 @@ options =
 
 -- | Parse command line argument and return either error messages or
 -- parsed 'Options'.
-parseOptions :: [String] -> Either [String] Options
+parseOptions :: [String] -- ^ Command line argument strings.
+             -> Either [String] Options
 parseOptions args =
   case getOpt Permute options args of
     (flags, rest, []) ->
@@ -118,9 +139,15 @@ fillDefaultIfNotGiven opts = opts
              then fld defaultOptions
              else orig
 
--- | Print help message.
+-- | Print help messages.
 printHelp :: IO ()
 printHelp = getProgName >>= putStrLn . helpMessage
+
+-- | Print version number of this package.
+printVersion :: IO ()
+printVersion =
+  do me <- getProgName
+     putStrLn (me ++ " version " ++ versionString)
 
 -- | Help message for command line output.
 helpMessage :: String -- ^ Executable program name.
@@ -136,6 +163,6 @@ helpMessage name = usageInfo header options
 \\n\
 \Options:\n"
 
--- | String representation of version number.
+-- | String representation of the version number of this package.
 versionString :: String
 versionString = showVersion version
