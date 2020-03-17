@@ -1,12 +1,10 @@
-hpc-codecov
-===========
+# hpc-codecov [![Hackage](https://img.shields.io/hackage/v/hpc-codecov)](https://hackage.haskell.org/package/hpc-codecov) [![Stackage](https://www.stackage.org/package/hpc-codecov/badge/lts)](https://www.stackage.org/lts/package/hpc-codecov)
 
 [![codecov](https://codecov.io/gh/8c6794b6/hpc-codecov/branch/master/graph/badge.svg)](https://codecov.io/gh/8c6794b6/hpc-codecov)
-[![Build
-Status](http://img.shields.io/travis/8c6794b6/codecov-haskell/master.svg?logo=travis)](https://travis-ci.org/8c6794b6/hpc-codecov)
+[![Travis](http://img.shields.io/travis/8c6794b6/codecov-haskell/master.svg?logo=travis)](https://travis-ci.com/8c6794b6/hpc-codecov)
 [![CircleCI](https://img.shields.io/circleci/build/gh/8c6794b6/hpc-codecov/master?logo=circleci)](https://circleci.com/gh/8c6794b6/hpc-codecov)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/dijqtsoqgc26oghj?svg=true)](https://ci.appveyor.com/project/8c6794b6/hpc-codecov)
-[![Hackage](https://img.shields.io/hackage/v/hpc-codecov)](https://hackage.haskell.org/package/hpc-codecov)
+[![GitHub](https://github.com/8c6794b6/hpc-codecov/workflows/build/badge.svg)](https://github.com/8c6794b6/hpc-codecov/actions?query=workflow%3Abuild)
 
 The ``hpc-codecov`` package contains an executable and library codes
 for generating [Codecov](https://codecov.io) JSON coverage report from
