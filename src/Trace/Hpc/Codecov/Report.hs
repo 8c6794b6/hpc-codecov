@@ -70,9 +70,9 @@ data Report = Report
  { reportTix      :: FilePath
    -- ^ Input tix file.
  , reportMixDirs  :: [FilePath]
-   -- ^ Directory containing mix files referred by the tix file.
+   -- ^ Directories containing mix files referred by the tix file.
  , reportSrcDirs  :: [FilePath]
-   -- ^ Directory containing source codes referred by the mix files.
+   -- ^ Directories containing source codes referred by the mix files.
  , reportExcludes :: [String]
    -- ^ Module name strings to exclude from coverage report.
  , reportOutFile  :: Maybe FilePath
@@ -127,6 +127,13 @@ emitCoverageJSON mb_outfile entries = wrap emit
     wrap = maybe ($ stdout) (`withFile` WriteMode) mb_outfile
     emit = flip hPutBuilder (buildJSON entries)
 
+
+-- ------------------------------------------------------------------------
+--
+-- Internal
+--
+-- ------------------------------------------------------------------------
+
 -- | Build simple JSON report from coverage entries.
 buildJSON :: [CoverageEntry] -> Builder
 buildJSON entries = contents
@@ -165,13 +172,6 @@ tixModuleToCoverage rpt tm@(TixModule name _hash _count _ixs) =
      path' <- ensureSrcPath rpt path
      return (CoverageEntry { ce_filename = path'
                            , ce_hits = lineHits })
-
-
--- ------------------------------------------------------------------------
---
--- Internal
---
--- ------------------------------------------------------------------------
 
 -- | Exclude modules specified in given 'Report'.
 excludeModules :: Report -> [TixModule] -> [TixModule]
@@ -225,9 +225,9 @@ type Tick = Int
 
 -- | Internal type used for accumulating mix entries.
 data Info =
-  Info {-# UNPACK  #-} !Int -- ^ Index count
-       {-# UNPACK  #-} !Int -- ^ Min line number
-       {-# UNPACK  #-} !Int -- ^ Max line number
+  Info {-# UNPACK #-} !Int -- ^ Index count
+       {-# UNPACK #-} !Int -- ^ Min line number
+       {-# UNPACK #-} !Int -- ^ Max line number
        ![(HpcPos, Tick)] -- ^ Pair of position and hit
 
 -- | Make line hits from intermediate info.
