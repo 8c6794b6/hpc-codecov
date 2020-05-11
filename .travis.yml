@@ -13,13 +13,13 @@ cache:
 
 jobs:
   include:
-    - env: EXEC="stack" RESOLVER="lts-14"
-    - env: EXEC="cabal" GHCVER="8.8.2"
+    - env: EXEC="stack" RESOLVER="lts-15"
+    - env: EXEC="cabal" GHCVER="8.10.1"
       addons:
         apt:
           packages:
-            - cabal-install-3.0
-            - ghc-8.8.2
+            - cabal-install-3.2
+            - ghc-8.10.1
           sources:
             - hvr-ghc
 
