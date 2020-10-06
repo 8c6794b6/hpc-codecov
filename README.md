@@ -92,7 +92,7 @@ Build the package and run the tests with coverage option:
 
 ```console
 $ stack --numeric-version
-2.1.3
+2.3.3
 $ stack build --test --coverage
 ```
 
@@ -103,7 +103,7 @@ directory and dist directory:
 ```console
 $ hpcroot=$(stack path --local-hpc-root)
 $ tix=$(find $hpcroot -name 'test-main.tix')
-$ mix=$(stack path --distdir)/hpc
+$ mix=$(stack path --dist-dir)/hpc
 $ hpc-codecov --mix=$mix --exclude=Paths_hpc_codecov -o codecov.json $tix
 ```
 
