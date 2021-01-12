@@ -16,7 +16,7 @@ jobs:
 
     - name: Cache stack global package db
       id: stack-global
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: ~/.stack
         key: ${{ runner.os }}-stack-global-${{ hashFiles('**.yaml') }}
@@ -26,7 +26,7 @@ jobs:
 
     - name: Cache stack-installed programs in ~/.local/bin
       id: stack-programs
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: ~/.local/bin
         key: ${{ runner.os }}-stack-programs-${{ hashFiles('**.yaml') }}
@@ -35,33 +35,30 @@ jobs:
           ${{ runner.os }}-local-bin
 
     - name: Cache .stack-work
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: .stack-work
         key: ${{ runner.os }}-stack-work-${{ hashFiles('**.yaml') }}
         restore-keys: ${{ runner.os }}-stack-work
 
-    - name: Install stack
-      uses: mstksg/setup-stack@v1
-
     - name: Show stack version
       run: stack --version
 
     - name: Setup stack
-      run: stack --resolver=lts-15 setup
+      run: stack setup
 
     - name: Install dependency packages
-      run: stack --resolver=lts-15 build --only-dependencies
+      run: stack build --only-dependencies
 
     - name: Build packages
-      run: stack --resolver=lts-15 build --fast --test --coverage --no-run-tests
+      run: stack build --fast --test --coverage --no-run-tests
 
     - name: Run tests
-      run: stack --resolver=lts-15 build --fast --test --coverage
+      run: stack build --fast --test --coverage
 
     - name: Generate coverage report
       run: |
-        STACK="stack --resolver=lts-15"
+        STACK="stack"
         HPCROOT=$($STACK path --local-hpc-root)
         TIX=$(find $HPCROOT -name 'test-main.tix')
         MIX=$($STACK path --dist-dir)/hpc
