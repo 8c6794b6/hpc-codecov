@@ -84,7 +84,7 @@ data Report = Report
 -- | Single file entry in coverage report.
 --
 -- See the
--- <https://docs.codecov.io/reference#section-codecov-json-report-format Codecov API>
+-- <https://docs.codecov.io/docs/codecov-custom-coverage-format Codecov documentation>
 -- for detail.
 data CoverageEntry =
   CoverageEntry { ce_filename :: FilePath -- ^ Source code file name.
