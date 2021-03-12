@@ -6,12 +6,15 @@ on:
     paths-ignore:
       - '**.md'
 
+env:
+  cache-version: v1
+
 defaults:
   run:
     shell: bash
 
 jobs:
-  build:
+  stack:
     strategy:
       matrix:
         os:
@@ -52,7 +55,7 @@ jobs:
       uses: actions/cache@v2
       with:
         path: ${{ steps.stack-root.outputs.path }}
-        key: ${{ runner.os }}-stack-global-${{ hashFiles('**.yaml') }}
+        key: ${{ runner.os }}-stack-global-${{ hashFiles('**.yaml') }}-${{ env.cache-version }}
         restore-keys: |
           ${{ runner.os }}-stack-global
           ${{ runner.os }}-stack
