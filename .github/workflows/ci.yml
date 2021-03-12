@@ -37,6 +37,7 @@ jobs:
       env:
         os: ${{ runner.os }}
       run: |
+        echo os=$os
         case $os in
           "Linux")
              echo "::set-output name=path::$HOME/.stack"
@@ -143,4 +144,5 @@ jobs:
         run: cabal build
 
       - name: Show the artifact
+        if: matrix.os == 'ubuntu-latest'
         run: ldd $(cabal exec -- which hpc-codecov)
