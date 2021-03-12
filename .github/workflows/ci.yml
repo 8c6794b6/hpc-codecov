@@ -144,13 +144,16 @@ jobs:
 
       - name: Set executable
         id: bin
-        run: echo "::set-output name=path::bin/${{ runner.os }}/hpc-codecov${{ steps.extension.outputs.exe }}"
+        run: echo "::set-output name=path::bin/hpc-codecov-${{ runner.os }}${{ steps.extension.outputs.exe }}"
 
       - name: Create bin directory
-        run: mkdir -p ./bin/${{ runner.os }}
+        run: mkdir ./bin/
 
       - name: Install to current directory
         run: cabal install --install-method=copy --installdir=./bin/${{ runner.os }}
+
+      - name: Rename the executable
+        run: mv -v bin/hpc-codecov${{ steps.extension.outputs.exe}} ${{ steps.bin.outputs.path }}
 
       - name: Show executable
         run: ls -lh ${{ steps.bin.outputs.path }}
