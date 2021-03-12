@@ -23,7 +23,7 @@ jobs:
 
     - name: Get stack root
       id: stack-root
-      run: echo ":: set-output name=path::$(stack path --stack-root)"
+      run: echo "::set-output name=path::$(stack path --stack-root)"
 
     - name: Cache stack root
       id: stack-global
