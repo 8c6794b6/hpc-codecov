@@ -42,7 +42,7 @@ jobs:
              echo "::set-output name=path::$HOME/.stack"
              ;;
           *)
-             echo "::set-output name=path::C:/Users/runneradmin/AppData/Roaming/stack"
+             echo "::set-output name=path::C:/Users/runneradmin/AppData"
              ;;
         esac
 
