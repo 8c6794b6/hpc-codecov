@@ -35,6 +35,7 @@ jobs:
       env:
         os: ${{ runner.os }}
       run: |
+        echo os=$os
         case $os in
           "ubuntu-latest")
              echo "::set-output name=path::$HOME/.stack"
