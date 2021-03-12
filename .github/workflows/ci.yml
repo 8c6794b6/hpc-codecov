@@ -109,3 +109,35 @@ jobs:
 
     - name: Upload coverage report
       run: bash <(curl -s https://codecov.io/bash)
+
+  cabal-install:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+    runs-on:
+      - ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Show versions
+        run: |
+          ghc --version
+          cabal --version
+
+      - name: Run cabal configure
+        run: cabal configure --enable-executable-static
+
+      - name: Build
+        run: cabal build
+
+      - name: Test
+        run: cabal test
+
+      - name: Show the artifact
+        run: ldd $(cabal exec -- which hpc-codecov)
