@@ -142,18 +142,24 @@ jobs:
         id: extension
         run: echo "::set-output name=exe::.exe"
 
-      - name: Get executable
-        id: exe
-        run: echo "::set-output name=path::$(cabal exec -- which hpc-codecov)${{ steps.extension.outputs.exe }}"
+      # - name: Get executable
+      #   id: exe
+      #   run: echo "::set-output name=path::$(cabal exec -- which hpc-codecov)${{ steps.extension.outputs.exe }}"
 
-      - name: Show executable path
-        run: echo ${{ steps.exe.outputs.path }}
+      # - name: Show executable path
+      #   run: echo ${{ steps.exe.outputs.path }}
 
-      - name: ls -lh executable
-        run: ls -lh ${{ steps.exe.outputs.path }}
+      # - name: ls -lh executable
+      #   run: ls -lh ${{ steps.exe.outputs.path }}
+      - name: Install to current directory
+        run: cabal install --install-method=copy --install-dir=.
+
+      - name: Show executable
+        run: ls -lh hpc-codecov${{ steps.extension.outputs.exe }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: hpc-codecov-${{ runner.os }}
-          path: ${{ steps.exe.outputs.path }}
+          path: hpc-codecov${{ steps.extension.outputs.exe }}
+          # path: ${{ steps.exe.outputs.path }}
