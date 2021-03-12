@@ -152,7 +152,7 @@ jobs:
       # - name: ls -lh executable
       #   run: ls -lh ${{ steps.exe.outputs.path }}
       - name: Install to current directory
-        run: cabal install --install-method=copy --install-dir=.
+        run: cabal install --install-method=copy --installdir=.
 
       - name: Show executable
         run: ls -lh hpc-codecov${{ steps.extension.outputs.exe }}
