@@ -134,9 +134,6 @@ jobs:
       - name: Configure
         run: cabal configure --enable-executable-stripping
 
-      # - name: Build
-      #   run: cabal build
-
       - name: Set .exe extension on windows
         if: matrix.os == 'windows-latest'
         id: extension
@@ -172,7 +169,6 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
-          # name: hpc-codecov-${{ runner.os }}
           name: bins
           path: ${{ steps.bin.outputs.path }}
 
@@ -200,7 +196,7 @@ jobs:
         with:
           draft: true
           prerelease: true
-          body: 'body text of this release'
+          body: ''
           files: |
             bin/hpc-codecov-Linux
             bin/hpc-codecov-Windows.exe
