@@ -202,7 +202,7 @@ jobs:
           prerelease: true
           body: 'body text of this release'
           files: |
-            bins/*
+            bin/*
 
       - name: Show released URL
         if: startsWith(github.ref, 'refs/tags')
