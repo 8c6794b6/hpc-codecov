@@ -146,6 +146,12 @@ jobs:
         id: exe
         run: echo "::set-output name=path::$(cabal exec -- which hpc-codecov)${{ steps.extension.outputs.exe }}"
 
+      - name: Show executable path
+        run: echo ${{ steps.exe.outputs.path }}
+
+      - name: ls -lh executable
+        run: ls -lh ${{ steps.exe.outputs.path }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
