@@ -138,7 +138,7 @@ jobs:
         run: cabal build
 
       - name: Set .exe extension on windows
-        if: ${{ matrix.os }} == 'windows-latest'
+        if: matrix.os == 'windows-latest'
         id: extension
         run: echo "::set-output name=exe::.exe"
 
