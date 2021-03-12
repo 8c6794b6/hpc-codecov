@@ -60,6 +60,13 @@ jobs:
           ${{ runner.os }}-stack-global
           ${{ runner.os }}-stack
 
+    - name: Cache windows optional data for stack
+      if: matrix.os == 'windows-latest'
+      uses: actions/cache@v2
+      with:
+        path: C:\Users\runneradmin\AppData\Local\Programs\stack
+        key: ${{ runner.os }}-stack-program-${{ env.cache-version }}
+
     # - name: Cache stack-installed programs in ~/.local/bin
     #   id: stack-programs
     #   uses: actions/cache@v2
