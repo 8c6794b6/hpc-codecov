@@ -142,8 +142,5 @@ jobs:
       - name: Build
         run: cabal build
 
-      - name: Test
-        run: cabal test
-
       - name: Show the artifact
         run: ldd $(cabal exec -- which hpc-codecov)
