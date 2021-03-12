@@ -21,7 +21,6 @@ jobs:
 
     runs-on:
       - ${{ matrix.os }}
-      # - ubuntu-latest
 
     steps:
     - name: Checkout project repository
@@ -47,14 +46,11 @@ jobs:
              ;;
         esac
 
-      # run: |
-      #   echo "::set-output name=path::$(stack path --stack-root)"
-
     - name: Cache stack root
+      if: runner.os != 'macOS'
       id: stack-global
       uses: actions/cache@v2
       with:
-        # path: ~/.stack
         path: ${{ steps.stack-root.outputs.path }}
         key: ${{ runner.os }}-stack-global-${{ hashFiles('**.yaml') }}
         restore-keys: |
