@@ -127,7 +127,7 @@ parseOptions args =
       -- Not returning error messages with missing ".tix" file
       -- argument at this point, to show help and version messages
       -- without specifying ".tix" file.
-      let opts0 = foldr (.) id flags $ emptyOptions
+      let opts0 = foldr ($) emptyOptions flags
           opts1 = fillDefaultIfNotGiven opts0
       in  case rest of
             []      -> Right opts1
