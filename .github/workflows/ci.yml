@@ -143,6 +143,16 @@ jobs:
       - name: Build
         run: cabal build
 
-      - name: Show the artifact
-        if: matrix.os == 'ubuntu-latest'
-        run: ldd $(cabal exec -- which hpc-codecov)
+      - name: Get executable
+        id: exe
+        run: echo "::set-output name=path::$(cabal exec -- which hpc-codecov)"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: bin
+          path: ${{ steps.exe.outputs.path }}
+
+      # - name: Show the artifact
+      #   if: matrix.os == 'ubuntu-latest'
+      #   run: ldd $(cabal exec -- which hpc-codecov)
