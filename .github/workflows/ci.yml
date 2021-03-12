@@ -131,28 +131,19 @@ jobs:
           ghc --version
           cabal --version
 
-      # - name: Install lld
-      #   if: matrix.os == 'ubuntu-latest'
-      #   run: |
-      #     sudo apt update
-      #     sudo apt install lld -y
-
-      # - name: Run cabal configure
-      #   run: cabal configure --enable-executable-static -flld
-
       - name: Build
         run: cabal build
 
+      - name: Set .exe extension on windows
+        if: ${{ matrix.os }} == 'windows-latest'
+        run: echo "::set-env name=exe::.exe"
+
       - name: Get executable
         id: exe
-        run: echo "::set-output name=path::$(cabal exec -- which hpc-codecov)"
+        run: echo "::set-output name=path::$(cabal exec -- which hpc-codecov)${{ env.exe }}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: hpc-codecov-${{ runner.os }}
           path: ${{ steps.exe.outputs.path }}
-
-      # - name: Show the artifact
-      #   if: matrix.os == 'ubuntu-latest'
-      #   run: ldd $(cabal exec -- which hpc-codecov)
