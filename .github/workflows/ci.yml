@@ -161,13 +161,15 @@ jobs:
       - name: Show executable
         run: ls -lh ${{ steps.bin.outputs.path }}
 
+      - name: Strip executable
+        run: strip -s ${{ steps.bin.outputs.path }}
+
       - name: Compress executable
         uses: svenstaro/upx-action@v2
         with:
           file: ${{ steps.bin.outputs.path }}
           args: -9
-          strip: true
-          strip_args: -s
+          strip: false
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
