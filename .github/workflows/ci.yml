@@ -147,7 +147,7 @@ jobs:
         run: echo "::set-output name=path::bin/hpc-codecov${{ steps.extension.outputs.exe }}"
 
       - name: Install to current directory
-        run: cabal install --install-method=copy --installdir=./bins
+        run: cabal install --install-method=copy --installdir=./bin
 
       - name: Show executable
         run: ls -lh ${{ steps.bin.outputs.path }}
