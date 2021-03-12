@@ -96,7 +96,7 @@ jobs:
         HPCROOT=$($STACK path --local-hpc-root)
         TIX=$(find $HPCROOT -name 'test-main.tix')
         MIX=$($STACK path --dist-dir)/hpc
-        $STACK exec -- hpc-codecov --mix=$MIX -o codecov.json $TIX
+        $STACK exec -- hpc-codecov --verbose --mix=$MIX -o codecov.json $TIX
 
     - name: Upload coverage report
       run: bash <(curl -s https://codecov.io/bash)
