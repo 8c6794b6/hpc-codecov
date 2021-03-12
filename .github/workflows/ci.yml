@@ -147,7 +147,7 @@ jobs:
         run: echo "::set-output name=path::bin/${{ runner.os }}/hpc-codecov${{ steps.extension.outputs.exe }}"
 
       - name: Create bin directory
-        run: mkdir ./bin/${{ runner.os }}
+        run: mkdir -p ./bin/${{ runner.os }}
 
       - name: Install to current directory
         run: cabal install --install-method=copy --installdir=./bin/${{ runner.os }}
