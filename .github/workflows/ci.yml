@@ -134,29 +134,20 @@ jobs:
       - name: Configure
         run: cabal configure --enable-executable-stripping
 
-      - name: Build
-        run: cabal build
+      # - name: Build
+      #   run: cabal build
 
       - name: Set .exe extension on windows
         if: matrix.os == 'windows-latest'
         id: extension
         run: echo "::set-output name=exe::.exe"
 
-      # - name: Get executable
-      #   id: exe
-      #   run: echo "::set-output name=path::$(cabal exec -- which hpc-codecov)${{ steps.extension.outputs.exe }}"
-
-      # - name: Show executable path
-      #   run: echo ${{ steps.exe.outputs.path }}
-
-      # - name: ls -lh executable
-      #   run: ls -lh ${{ steps.exe.outputs.path }}
-      - name: Install to current directory
-        run: cabal install --install-method=copy --installdir=.
-
       - name: Set executable
         id: bin
         run: echo "::set-output name=path::hpc-codecov${{ steps.extension.outputs.exe }}"
+
+      - name: Install to current directory
+        run: cabal install --install-method=copy --installdir=.
 
       - name: Show executable
         run: ls -lh ${{ steps.bin.outputs.path }}
@@ -177,5 +168,3 @@ jobs:
         with:
           name: hpc-codecov-${{ runner.os }}
           path: ${{ steps.bin.outputs.path }}
-          # path: hpc-codecov${{ steps.extension.outputs.exe }}
-          # path: ${{ steps.exe.outputs.path }}
