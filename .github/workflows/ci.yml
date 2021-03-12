@@ -42,7 +42,7 @@ jobs:
              echo "::set-output name=path::$HOME/.stack"
              ;;
           *)
-             echo "::set-output name=path::C:/Users/runneradmin/AppData"
+             echo "::set-output name=path::C:/Users/runneradmin/AppData/Roaming/stack"
              ;;
         esac
 
@@ -74,8 +74,11 @@ jobs:
     #     key: ${{ runner.os }}-stack-work-${{ hashFiles('**.yaml') }}
     #     restore-keys: ${{ runner.os }}-stack-work
 
-    - name: Setup stack
-      run: stack setup
+    # - name: Setup stack
+    #   run: stack setup
+
+    - name: Set stack to use system ghc
+      run: stack config set system-ghc --global true
 
     - name: Install dependency packages
       run: stack build --fast --test --coverage --only-dependencies
