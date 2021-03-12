@@ -7,7 +7,7 @@ on:
       - '**.md'
 
 env:
-  cache-version: v1
+  cache-version: v2
 
 defaults:
   run:
@@ -57,16 +57,13 @@ jobs:
       with:
         path: ${{ steps.stack-root.outputs.path }}
         key: ${{ runner.os }}-stack-global-${{ hashFiles('**.yaml') }}-${{ env.cache-version }}
-        restore-keys: |
-          ${{ runner.os }}-stack-global
-          ${{ runner.os }}-stack
 
     - name: Cache windows optional data for stack
       if: matrix.os == 'windows-latest'
       uses: actions/cache@v2
       with:
         path: C:\Users\runneradmin\AppData\Local\Programs\stack
-        key: ${{ runner.os }}-stack-program-${{ env.cache-version }}
+        key: ${{ runner.os }}-stack-program-${{ hashFiles('**.yaml') }}-${{ env.cache-version }}
 
     # - name: Cache stack-installed programs in ~/.local/bin
     #   id: stack-programs
