@@ -131,7 +131,7 @@ jobs:
           cabal --version
 
       - name: Run cabal configure
-        run: cabal configure --enable-executable-static
+        run: cabal configure --enable-executable-static -flld
 
       - name: Build
         run: cabal build
