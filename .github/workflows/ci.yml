@@ -162,6 +162,7 @@ jobs:
         run: ls -lh ${{ steps.bin.outputs.path }}
 
       - name: Strip executable
+        if: matrix.os != 'macos-latest'
         run: strip -s ${{ steps.bin.outputs.path }}
 
       - name: Compress executable
