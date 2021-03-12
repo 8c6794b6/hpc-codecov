@@ -150,7 +150,7 @@ jobs:
         run: mkdir ./bin/
 
       - name: Install to current directory
-        run: cabal install --install-method=copy --installdir=./bin/${{ runner.os }}
+        run: cabal install --install-method=copy --installdir=./bin
 
       - name: Rename the executable
         run: mv -v bin/hpc-codecov${{ steps.extension.outputs.exe}} ${{ steps.bin.outputs.path }}
