@@ -130,6 +130,13 @@ jobs:
           ghc --version
           cabal --version
 
+      - name: Install lld
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt update
+          sudo apt install lld -y
+          lld --version
+
       - name: Run cabal configure
         run: cabal configure --enable-executable-static -flld
 
