@@ -146,6 +146,9 @@ jobs:
         id: bin
         run: echo "::set-output name=path::bin/${{ runner.os }}/hpc-codecov${{ steps.extension.outputs.exe }}"
 
+      - name: Create bin directory
+        run: mkdir ./bin/${{ runner.os }}
+
       - name: Install to current directory
         run: cabal install --install-method=copy --installdir=./bin/${{ runner.os }}
 
@@ -186,3 +189,18 @@ jobs:
 
       - name: Show the bin directory
         run: ls -lh bin
+
+      - name: Make release
+        if: startsWith(github.ref, 'refs/tags')
+        uses: softprops/action-gh-release@v1
+        id: rel
+        with:
+          draft: true
+          prerelease: true
+          body: 'body text of this release'
+          files: |
+            bins/**/*
+
+      - name: Show released URL
+        if: startsWith(github.ref, 'refs/tags')
+        run: echo ${{ steps.rel.outputs.url }}
