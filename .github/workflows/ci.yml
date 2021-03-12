@@ -1,0 +1,186 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    paths-ignore:
+      - '**.md'
+
+env:
+  cache-version: v2
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  stack:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+    runs-on:
+      - ${{ matrix.os }}
+
+    steps:
+    - name: Checkout project repository
+      uses: actions/checkout@v2
+
+    - name: Show stack version
+      run: stack --version
+
+    - name: Get stack root
+      id: stack-root
+      env:
+        os: ${{ runner.os }}
+      run: |
+        echo os=$os
+        case $os in
+          "Linux")
+             echo "::set-output name=path::$HOME/.stack"
+             ;;
+          "macOS")
+             echo "::set-output name=path::$HOME/.stack"
+             ;;
+          *)
+             echo "::set-output name=path::C:/Users/runneradmin/AppData/Roaming/stack"
+             ;;
+        esac
+
+    - name: Cache stack root
+      if: runner.os != 'macOS'
+      id: stack-global
+      uses: actions/cache@v2
+      with:
+        path: ${{ steps.stack-root.outputs.path }}
+        key: ${{ runner.os }}-stack-global-${{ hashFiles('**.yaml') }}-${{ env.cache-version }}
+
+    - name: Cache windows optional data for stack
+      if: matrix.os == 'windows-latest'
+      uses: actions/cache@v2
+      with:
+        path: C:\Users\runneradmin\AppData\Local\Programs\stack
+        key: ${{ runner.os }}-stack-program-${{ hashFiles('**.yaml') }}-${{ env.cache-version }}
+
+    - name: Set stack to use system ghc
+      run: stack config set system-ghc --global true
+
+    - name: Install dependency packages
+      run: stack build --fast --test --coverage --only-dependencies
+
+    - name: Build packages
+      run: stack build --fast --test --coverage --no-run-tests
+
+    - name: Run tests
+      run: stack build --fast --test --coverage
+
+    - name: Generate coverage report
+      run: |
+        STACK="stack"
+        HPCROOT=$($STACK path --local-hpc-root)
+        TIX=$(find $HPCROOT -name 'test-main.tix')
+        MIX=$($STACK path --dist-dir)/hpc
+        $STACK exec -- hpc-codecov --verbose --mix=$MIX -o codecov.json $TIX
+
+    - name: Upload coverage report
+      run: bash <(curl -s https://codecov.io/bash)
+
+  cabal-install:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+    runs-on:
+      - ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Show versions
+        run: |
+          ghc --version
+          cabal --version
+
+      - name: Configure
+        run: cabal configure --enable-executable-stripping
+
+      - name: Set .exe extension on windows
+        if: matrix.os == 'windows-latest'
+        id: extension
+        run: echo "::set-output name=exe::.exe"
+
+      - name: Set executable
+        id: bin
+        run: echo "::set-output name=path::bin/hpc-codecov-${{ runner.os }}${{ steps.extension.outputs.exe }}"
+
+      - name: Create bin directory
+        run: mkdir ./bin/
+
+      - name: Install to current directory
+        run: cabal install --install-method=copy --installdir=./bin
+
+      - name: Rename the executable
+        run: mv -v bin/hpc-codecov${{ steps.extension.outputs.exe}} ${{ steps.bin.outputs.path }}
+
+      - name: Show executable
+        run: ls -lh ${{ steps.bin.outputs.path }}
+
+      - name: Strip executable
+        if: matrix.os != 'macos-latest'
+        run: strip -s ${{ steps.bin.outputs.path }}
+
+      - name: Compress executable
+        uses: svenstaro/upx-action@v2
+        with:
+          file: ${{ steps.bin.outputs.path }}
+          args: -9
+          strip: false
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: bins
+          path: ${{ steps.bin.outputs.path }}
+
+  release:
+    name: Release on new tag
+    runs-on: ubuntu-latest
+    needs:
+      - stack
+      - cabal-install
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: bins
+          path: bin
+
+      - name: Show contents of the bin directory
+        run: ls -lh bin
+
+      - name: Make release
+        if: startsWith(github.ref, 'refs/tags')
+        uses: softprops/action-gh-release@v1
+        id: rel
+        with:
+          draft: true
+          prerelease: true
+          body: ''
+          files: |
+            bin/hpc-codecov-Linux
+            bin/hpc-codecov-Windows.exe
+            bin/hpc-codecov-macOS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Show released URL
+        if: startsWith(github.ref, 'refs/tags')
+        run: echo ${{ steps.rel.outputs.url }}
