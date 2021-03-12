@@ -154,12 +154,25 @@ jobs:
       - name: Install to current directory
         run: cabal install --install-method=copy --installdir=.
 
+      - name: Set executable
+        id: bin
+        run: echo "::set-output name=path::hpc-codecov${{ steps.extension.outputs.exe }}"
+
       - name: Show executable
-        run: ls -lh hpc-codecov${{ steps.extension.outputs.exe }}
+        run: ls -lh ${{ steps.bin.outputs.path }}
+
+      - name: Compress executable
+        uses: svenstaro/upx-action@v2
+        with:
+          file: ${{ steps.bin.outputs.path }}
+          args: -9
+          strip: true
+          strip_args: -s
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
           name: hpc-codecov-${{ runner.os }}
-          path: hpc-codecov${{ steps.extension.outputs.exe }}
+          path: ${{ steps.bin.outputs.path }}
+          # path: hpc-codecov${{ steps.extension.outputs.exe }}
           # path: ${{ steps.exe.outputs.path }}
