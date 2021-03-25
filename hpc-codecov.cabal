@@ -32,11 +32,6 @@ tested-with:           GHC == 8.2.2
                      , GHC == 8.10.1
                      , GHC == 9.0.1
 
-flag lld
-  description:         Use lld when linking executable
-  default:             False
-  manual:              True
-
 library
   hs-source-dirs:      src
   exposed-modules:     Trace.Hpc.Codecov.Error
@@ -61,8 +56,6 @@ executable hpc-codecov
                      , hpc-codecov
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded -rtsopts
-  if flag(lld)
-    ld-options: -static -fuse-ld=lld
 
 test-suite test-main
   type:                exitcode-stdio-1.0
