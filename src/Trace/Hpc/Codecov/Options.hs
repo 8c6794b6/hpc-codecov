@@ -27,14 +27,19 @@ module Trace.Hpc.Codecov.Options
   ) where
 
 -- base
-import Control.Exception        (throw)
-import Data.Version             (showVersion)
-import System.Console.GetOpt    (ArgDescr (..), ArgOrder (..),
-                                 OptDescr (..), getOpt, usageInfo)
-import System.Environment       (getProgName)
+import Control.Exception          (throw, throwIO)
+import Data.Version               (showVersion)
+import System.Console.GetOpt      (ArgDescr (..), ArgOrder (..),
+                                   OptDescr (..), getOpt, usageInfo)
+import System.Environment         (getProgName)
+
+-- directory
+import System.Directory           (doesFileExist)
+
 
 -- Internal
-import Paths_hpc_codecov        (version)
+import Paths_hpc_codecov          (version)
+import Trace.Hpc.Codecov.Discover
 import Trace.Hpc.Codecov.Error
 import Trace.Hpc.Codecov.Report
 
@@ -50,26 +55,38 @@ data Options = Options
     -- ^ Module name strings to exclude from coverage report.
   , optOutFile     :: Maybe FilePath
     -- ^ Output file to write JSON report, if given.
+
   , optVerbose     :: Bool
     -- ^ Flag for showing verbose message during coverage report
     -- generation.
+
+  , optProjectRoot :: FilePath
+    -- ^ Project root directory for the build tool.
+  , optBuildDir    :: Maybe FilePath
+    -- ^ Name of the build directory used by the build tool
+  , optSkipDirs    :: [String]
+    -- ^ Directories to ignore while discovering.
+
   , optShowVersion :: Bool
     -- ^ Flag for showing version.
   , optShowNumeric :: Bool
     -- ^ Flag for showing numeric version.
   , optShowHelp    :: Bool
     -- ^ Flag for showing help message.
-  } deriving (Eq, Show)
+  }
 
 -- | Empty 'Options'.
 emptyOptions :: Options
 emptyOptions = Options
-  { optTix = throw NoTixFile
+  { optTix = throw NoTarget
   , optMixDirs = []
   , optSrcDirs = []
   , optExcludes = []
   , optOutFile = Nothing
   , optVerbose = False
+  , optProjectRoot = "."
+  , optBuildDir = Nothing
+  , optSkipDirs = []
   , optShowVersion = False
   , optShowNumeric = False
   , optShowHelp = False
@@ -86,15 +103,15 @@ defaultOptions = emptyOptions
 options :: [OptDescr (Options -> Options)]
 options =
   [ Option ['m'] ["mixdir"]
-            (ReqArg (\d o -> o {optMixDirs = d : optMixDirs o})
-                    "DIR")
+           (ReqArg (\d o -> o {optMixDirs = d : optMixDirs o})
+                   "DIR")
             ".mix file directory, can repeat\n\
-            \default is .hpc"
+            \(default: .hpc)"
   , Option ['s'] ["srcdir"]
            (ReqArg (\d o -> o {optSrcDirs = d : optSrcDirs o})
                    "DIR")
            "source directory, can repeat\n\
-           \default is current directory"
+           \(default: current directory)"
   , Option ['x'] ["exclude"]
            (ReqArg (\m o -> o {optExcludes = m : optExcludes o})
                    "MODULE")
@@ -102,7 +119,28 @@ options =
   , Option ['o'] ["out"]
            (ReqArg (\p o -> o {optOutFile = Just p}) "FILE")
            "output file\n\
-           \default is stdout"
+           \(default: stdout)"
+
+  , Option ['r'] ["root"]
+           (ReqArg (\d o -> o {optProjectRoot = d})
+                   "DIR")
+           "Project root directory for TOOL\n\
+           \Usually the directory containing\n\
+           \'stack.yaml' or 'cabal.project'\n\
+           \(default: .)"
+  , Option ['b'] ["builddir"]
+           (ReqArg (\d o -> o {optBuildDir = Just d})
+                   "DIR")
+           "Name of directory made by the TOOL\n\
+           \(default:\n\
+           \ - '.stack-work' for stack\n\
+           \ - 'dist-newstyle' for cabal)"
+  , Option ['X'] ["skip"]
+           (ReqArg (\d o -> o {optSkipDirs = d:optSkipDirs o})
+                   "DIR")
+           "Basename of directory to skip while\n\
+           \searching data for TOOL, can repeat"
+
   , Option ['v'] ["verbose"]
            (NoArg (\o -> o {optVerbose = True}))
            "show verbose output"
@@ -114,7 +152,7 @@ options =
            "show numeric version and exit"
   , Option ['h'] ["help"]
            (NoArg (\o -> o {optShowHelp = True}))
-           "show this help"
+           "show this help and exit"
   ]
 
 -- | Parse command line argument and return either error messages or
@@ -146,16 +184,49 @@ fillDefaultIfNotGiven opts = opts
              then fld defaultOptions
              else orig
 
+-- | Representation of @TARGET@ argument.
+data Target
+  = TixFile FilePath
+  | TestSuite BuildTool String
+
+parseTarget :: String -> IO Target
+parseTarget str = do
+  -- Detecting file existence before separating with ':', to support
+  -- directory path containing ':' under Windows.
+  file_found <- doesFileExist str
+  if file_found
+     then pure $ TixFile str
+     else case break (== ':') str of
+       ("cabal", ':':name) -> pure $ TestSuite Cabal name
+       ("stack", ':':name) -> pure $ TestSuite Stack name
+       (tool, ':':_)       -> throwIO $ InvalidBuildTool tool
+       _                   -> pure $ TixFile str
+
 -- | Make a 'Report' value from 'Optoins'.
-opt2rpt :: Options -> Report
-opt2rpt opt = Report
-  { reportTix = optTix opt
-  , reportMixDirs = optMixDirs opt
-  , reportSrcDirs = optSrcDirs opt
-  , reportExcludes = optExcludes opt
-  , reportOutFile = optOutFile opt
-  , reportVerbose = optVerbose opt
-  }
+opt2rpt :: Options -> IO Report
+opt2rpt opt = do
+  let rpt1 = mempty
+        { reportMixDirs = optMixDirs opt
+        , reportSrcDirs = optSrcDirs opt
+        , reportExcludes = optExcludes opt
+        , reportOutFile = optOutFile opt
+        , reportVerbose = verbose
+        }
+      tix = optTix opt
+      verbose = optVerbose opt
+  target <- parseTarget tix
+  case target of
+    TixFile path -> pure (rpt1 {reportTix = path})
+    TestSuite tool name -> do
+      rpt2 <- discover DiscoverArgs
+        { da_tool = tool
+        , da_testsuite = name
+        , da_root = optProjectRoot opt
+        , da_builddir = optBuildDir opt
+        , da_skipdirs = optSkipDirs opt
+        , da_verbose = verbose
+        }
+      pure $ rpt1 `mappend` rpt2
 
 -- | Print help messages.
 printHelp :: IO ()
@@ -170,16 +241,25 @@ printVersion =
 -- | Help message for command line output.
 helpMessage :: String -- ^ Executable program name.
             -> String
-helpMessage name = usageInfo header options
+helpMessage name = usageInfo header options ++ footer
   where
-    header = "\
-\Generate Codecov JSON coverage report from .tix and .mix files\n\
+    header = "USAGE: " ++ name ++ " [OPTIONS] TARGET\n\
 \\n\
-\Usage: \n\
+\Generate Codecov JSON coverage report for Haskell source codes\n\
+\from .tix and .mix files made with hpc.\n\
 \\n\
-\   " ++ name ++ " [OPTIONS] TIX_FILE\n\
+\TARGET is either a path to .tix file or 'TOOL:TEST_SUITE'.\n\
+\Supported TOOL values are 'stack' and 'cabal'. When the TOOL is\n\
+\'stack' and building project with multiple packages, use 'all' as\n\
+\TEST_SUITE value to refer the combined report.\n\
 \\n\
-\Options:\n"
+\OPTIONS:\n"
+    footer = "\
+\\n\
+\For more info, see:\n\
+\\n\
+\  https://github.com/8c6794b6/hpc-codecov#readme\n\
+\\n"
 
 -- | String representation of the version number of this package.
 versionString :: String

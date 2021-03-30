@@ -35,8 +35,8 @@ withBriefUsageOnError = handle handler
 
 -- | Exceptions thrown during coverage report generation.
 data HpcCodecovError
-  = NoTixFile
-   -- ^ Tix file path was not given.
+  = NoTarget
+   -- ^ Target was not given.
   | TixNotFound FilePath
    -- ^ Tix file path was given, but not found.
   | MixNotFound FilePath [FilePath]
@@ -45,6 +45,10 @@ data HpcCodecovError
   | SrcNotFound FilePath [FilePath]
    -- ^ Like 'MixNotFound', but for source code specified by a mix
    -- file.
+  | InvalidBuildTool String
+   -- ^ Invalid build tool.
+  | TestSuiteNotFound String
+   -- ^ Test suite was given, but not found.
   | InvalidArgs [String]
    -- ^ Some errors in command line argument, e.g., required value not
    -- specified.
@@ -56,10 +60,13 @@ instance Exception HpcCodecovError where
 hpcCodecovErrorMessage :: HpcCodecovError -> String
 hpcCodecovErrorMessage e =
   case e of
-    NoTixFile -> "no .tix file given\n"
+    NoTarget -> "no TARGET was given\n"
     TixNotFound tix -> "cannot find tix: " ++ show tix ++ "\n"
     MixNotFound mix locs -> searchedLocations "mix" mix locs
     SrcNotFound src locs -> searchedLocations "src" src locs
+    InvalidBuildTool tool-> "invalid build tool: `" ++ tool ++ "'\n"
+    TestSuiteNotFound name ->
+      "cannot find tix for test suite: " ++ show name ++ "\n"
     InvalidArgs msgs ->
       case msgs of
         [x] -> x

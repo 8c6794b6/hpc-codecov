@@ -22,9 +22,21 @@ description:
 extra-source-files:
   README.md
   CHANGELOG.md
+  --
   test/data/reciprocal/reciprocal.hs
   test/data/reciprocal/reciprocal.tix
   test/data/reciprocal/.hpc/Main.mix
+  --
+  test/data/project1/ChangeLog.md
+  test/data/project1/LICENSE
+  test/data/project1/README.md
+  test/data/project1/Setup.hs
+  test/data/project1/app/Main.hs
+  test/data/project1/package.yaml
+  test/data/project1/src/Lib.hs
+  test/data/project1/test/Spec.hs
+  test/data/project1/project1.cabal
+  test/data/project1/stack.yaml
 
 tested-with:           GHC == 8.2.2
                      , GHC == 8.4.4
@@ -38,6 +50,7 @@ library
   exposed-modules:     Trace.Hpc.Codecov.Error
                        Trace.Hpc.Codecov.Main
                        Trace.Hpc.Codecov.Options
+                       Trace.Hpc.Codecov.Discover
                        Trace.Hpc.Codecov.Report
                        Paths_hpc_codecov
   autogen-modules:     Paths_hpc_codecov

@@ -27,5 +27,5 @@ main = withBriefUsageOnError (getArgs >>= go)
         Right opts | optShowHelp opts    -> printHelp
                    | optShowVersion opts -> printVersion
                    | optShowNumeric opts -> putStrLn versionString
-                   | otherwise           -> genReport (opt2rpt opts)
+                   | otherwise           -> opt2rpt opts >>= genReport
         Left errs -> throwIO (InvalidArgs errs)

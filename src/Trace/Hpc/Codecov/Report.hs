@@ -92,7 +92,7 @@ instance Monoid Report where
 
 emptyReport :: Report
 emptyReport = Report
-  { reportTix = throw NoTixFile
+  { reportTix = throw NoTarget
   , reportMixDirs = []
   , reportSrcDirs = []
   , reportExcludes = []

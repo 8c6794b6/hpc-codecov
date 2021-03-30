@@ -24,3 +24,4 @@ codecov.json
 hpc-codecov.tix
 tmp/
 .hpc_codecov_test_tmp*
+test/data/project1/dot-stack-work
