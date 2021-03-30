@@ -21,9 +21,10 @@ module Trace.Hpc.Codecov.Report
   ) where
 
 -- base
-import Control.Exception       (ErrorCall, handle, throwIO)
-import Control.Monad           (when)
+import Control.Exception       (ErrorCall, handle, throw, throwIO)
+import Control.Monad           (mplus, when)
 import Control.Monad.ST        (ST)
+import Data.Function           (on)
 import Data.List               (foldl', intersperse)
 import System.IO               (IOMode (..), hPutStrLn, stderr, stdout,
                                 withFile)
@@ -55,7 +56,6 @@ import Trace.Hpc.Util          (HpcPos, fromHpcPos)
 
 -- Internal
 import Trace.Hpc.Codecov.Error
--- import Trace.Hpc.Codecov.Options
 
 
 -- ------------------------------------------------------------------------
@@ -80,6 +80,36 @@ data Report = Report
  , reportVerbose  :: Bool
    -- ^ Flag for showing verbose message during report generation.
  } deriving (Eq, Show)
+
+#if MIN_VERSION_base(4,11,0)
+instance Semigroup Report where
+  (<>) = mappendReport
+#endif
+
+instance Monoid Report where
+  mempty = emptyReport
+  mappend = mappendReport
+
+emptyReport :: Report
+emptyReport = Report
+  { reportTix = throw NoTixFile
+  , reportMixDirs = []
+  , reportSrcDirs = []
+  , reportExcludes = []
+  , reportOutFile = Nothing
+  , reportVerbose = False
+  }
+
+mappendReport :: Report -> Report -> Report
+mappendReport r1 r2 =
+  let extend f = ((<>) `on` f) r1 r2
+  in  Report { reportTix = reportTix r2
+             , reportMixDirs = extend reportMixDirs
+             , reportSrcDirs = extend reportSrcDirs
+             , reportExcludes = extend reportExcludes
+             , reportOutFile = (mplus `on` reportOutFile) r1 r2
+             , reportVerbose = ((||) `on` reportVerbose) r1 r2
+             }
 
 -- | Single file entry in coverage report.
 --
