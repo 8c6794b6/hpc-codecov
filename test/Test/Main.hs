@@ -92,7 +92,7 @@ cmdline = testGroup "cmdline"
   , testCase "non-existing-options"
              (shouldFail (main' ["--foo", "--bar", "--buzz"]))
   , testCase "mixdir-without-argument"
-             (shouldFail (main' ["--mixdir"]))
+             (shouldFail (main' ["--mix"]))
   , testCase "no-tix-file"
              (shouldFail (main' []))
   , testCase "non-existing-tix"
@@ -284,7 +284,7 @@ discoverStackTest =
         , t "project1"
           [ "--root=" ++ testData "project1"
           , "--verbose"
-          , "--builddir=dot-stack-work"
+          , "--build=dot-stack-work"
           , "stack:project1-test.tix"]
           ["--work-dir=dot-stack-work"]
 

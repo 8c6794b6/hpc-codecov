@@ -48,9 +48,9 @@ data DiscoverArgs = DiscoverArgs
   { da_tool      :: BuildTool
     -- ^ Tool used to build Haskell cabal package.
   , da_testsuite :: String
-    -- ^ Test suite name to search @.tix@ file.
-  , da_root      :: FilePath
-    -- ^ The project root directory for the build tool.
+    -- ^ Test suite name to search for @.tix@ file.
+  , da_rootdir      :: FilePath
+    -- ^ The project root directory.
   , da_builddir  :: Maybe String
     -- ^ Name of the temporary build directory made by the build tool.
   , da_skipdirs  :: [String]
@@ -87,7 +87,7 @@ discover da = do
 
   say da $
     "Starting discover for " ++ show (da_tool da) ++ "\n" ++
-    "Scanning under \"" ++ da_root da ++ "\"" ++
+    "Scanning under \"" ++ da_rootdir da ++ "\"" ++
     " for .cabal files and \"" ++ build_dir ++ "\"\n" ++
     skipped_dirs_msg
 
@@ -141,9 +141,9 @@ say da msg = when (da_verbose da) $ hPutStrLn stderr msg
 findSrcDirsAndBuildDirs
   :: DiscoverArgs -> String -> IO ([FilePath], [FilePath])
 findSrcDirsAndBuildDirs da build_dir = do
-    ds <- if null $ da_root da
+    ds <- if null $ da_rootdir da
         then listDirectory "."
-        else pure [da_root da]
+        else pure [da_rootdir da]
     foldDirWithIgnoring ignored f z ds
   where
     z = ([], [])

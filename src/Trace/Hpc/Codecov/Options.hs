@@ -60,7 +60,7 @@ data Options = Options
     -- ^ Flag for showing verbose message during coverage report
     -- generation.
 
-  , optProjectRoot :: FilePath
+  , optRootDir :: FilePath
     -- ^ Project root directory for the build tool.
   , optBuildDir    :: Maybe FilePath
     -- ^ Name of the build directory used by the build tool
@@ -84,7 +84,7 @@ emptyOptions = Options
   , optExcludes = []
   , optOutFile = Nothing
   , optVerbose = False
-  , optProjectRoot = ""
+  , optRootDir = ""
   , optBuildDir = Nothing
   , optSkipDirs = []
   , optShowVersion = False
@@ -102,12 +102,12 @@ defaultOptions = emptyOptions
 -- | Commandline option oracle.
 options :: [OptDescr (Options -> Options)]
 options =
-  [ Option ['m'] ["mixdir"]
+  [ Option ['m'] ["mix"]
            (ReqArg (\d o -> o {optMixDirs = uncommas d ++ optMixDirs o})
                    "DIR")
             ".mix file directory, can repeat\n\
             \(default: .hpc)"
-  , Option ['s'] ["srcdir"]
+  , Option ['s'] ["src"]
            (ReqArg (\d o -> o {optSrcDirs = uncommas d ++ optSrcDirs o})
                    "DIR")
            "Source directory, can repeat\n\
@@ -122,16 +122,16 @@ options =
            \(default: stdout)"
 
   , Option ['r'] ["root"]
-           (ReqArg (\d o -> o {optProjectRoot = d})
+           (ReqArg (\d o -> o {optRootDir = d})
                    "DIR")
            "Project root directory for TOOL\n\
            \Usually the directory containing\n\
            \'stack.yaml' or 'cabal.project'\n\
            \(default: current directory)"
-  , Option ['b'] ["builddir"]
+  , Option ['b'] ["build"]
            (ReqArg (\d o -> o {optBuildDir = Just d})
                    "DIR")
-           "Name of directory made by the TOOL\n\
+           "Build directory made by the TOOL\n\
            \(default:\n\
            \ - '.stack-work' for stack\n\
            \ - 'dist-newstyle' for cabal)"
@@ -228,7 +228,7 @@ opt2rpt opt = do
       rpt2 <- discover DiscoverArgs
         { da_tool = tool
         , da_testsuite = name
-        , da_root = optProjectRoot opt
+        , da_rootdir = optRootDir opt
         , da_builddir = optBuildDir opt
         , da_skipdirs = optSkipDirs opt
         , da_verbose = verbose
