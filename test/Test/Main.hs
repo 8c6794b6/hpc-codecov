@@ -330,7 +330,7 @@ discoverCabalTest =
                   tix_path <- fromMaybe "project1-test.tix" <$> getTixPath
                   canonical_tix_path <- canonicalizePath tix_path
                   main' [ "--verbose"
-                        , "-x", "Main", "-x", "Paths_project1"
+                        , "-x", "Main,Paths_project1"
                         , "cabal:" ++ canonical_tix_path])
         ]
 

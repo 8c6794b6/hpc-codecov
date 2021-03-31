@@ -103,17 +103,17 @@ defaultOptions = emptyOptions
 options :: [OptDescr (Options -> Options)]
 options =
   [ Option ['m'] ["mixdir"]
-           (ReqArg (\d o -> o {optMixDirs = d : optMixDirs o})
+           (ReqArg (\d o -> o {optMixDirs = uncommas d ++ optMixDirs o})
                    "DIR")
             ".mix file directory, can repeat\n\
             \(default: .hpc)"
   , Option ['s'] ["srcdir"]
-           (ReqArg (\d o -> o {optSrcDirs = d : optSrcDirs o})
+           (ReqArg (\d o -> o {optSrcDirs = uncommas d ++ optSrcDirs o})
                    "DIR")
            "source directory, can repeat\n\
            \(default: current directory)"
   , Option ['x'] ["exclude"]
-           (ReqArg (\m o -> o {optExcludes = m : optExcludes o})
+           (ReqArg (\m o -> o {optExcludes = uncommas m ++ optExcludes o})
                    "MODULE")
            "module name to exclude, can repeat"
   , Option ['o'] ["out"]
@@ -136,7 +136,7 @@ options =
            \ - '.stack-work' for stack\n\
            \ - 'dist-newstyle' for cabal)"
   , Option ['X'] ["skip"]
-           (ReqArg (\d o -> o {optSkipDirs = d:optSkipDirs o})
+           (ReqArg (\d o -> o {optSkipDirs = uncommas d ++ optSkipDirs o})
                    "DIR")
            "Basename of directory to skip while\n\
            \searching data for TOOL, can repeat"
@@ -201,6 +201,13 @@ parseTarget str = do
        ("stack", ':':name) -> pure $ TestSuite Stack name
        (tool, ':':_)       -> throwIO $ InvalidBuildTool tool
        _                   -> pure $ TixFile str
+
+uncommas :: String -> [String]
+uncommas = go
+  where
+    go str = case break (== ',') str of
+      (cs, ',':rest) -> cs : go rest
+      (cs, _)        -> [cs]
 
 -- | Make a 'Report' value from 'Optoins'.
 opt2rpt :: Options -> IO Report
