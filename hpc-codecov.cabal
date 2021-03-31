@@ -1,6 +1,6 @@
 cabal-version:       2.0
 name:                hpc-codecov
-version:             0.2.0.2
+version:             0.3.0.0
 synopsis:            Generate codecov report from hpc data
 license:             BSD3
 license-file:        LICENSE
