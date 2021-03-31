@@ -4,27 +4,157 @@
 [![Travis](http://img.shields.io/travis/8c6794b6/codecov-haskell/master.svg?logo=travis)](https://travis-ci.com/8c6794b6/hpc-codecov)
 [![CircleCI](https://img.shields.io/circleci/build/gh/8c6794b6/hpc-codecov/master?logo=circleci)](https://circleci.com/gh/8c6794b6/hpc-codecov)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/dijqtsoqgc26oghj?svg=true)](https://ci.appveyor.com/project/8c6794b6/hpc-codecov)
-[![GitHub](https://img.shields.io/github/workflow/status/8c6794b6/hpc-codecov/ci?logo=github)](https://github.com/8c6794b6/hpc-codecov/actions?query=workflow%3ci)
+[![GitHub](https://img.shields.io/github/workflow/status/8c6794b6/hpc-codecov/ci?logo=github)](https://github.com/8c6794b6/hpc-codecov/actions/workflows/ci.yml)
 
 The ``hpc-codecov`` package contains an executable and library codes
 for generating [Codecov](https://codecov.io) JSON coverage report from
 ``.tix`` and ``.mix`` files made with
-[hpc](https://hackage.haskell.org/package/hpc).
+[hpc](https://hackage.haskell.org/package/hpc). The generated report
+is ready to be uploaded to Codecov with other tools such as [Codecov
+Bash
+uploader](https://docs.codecov.io/docs/about-the-codecov-bash-uploader).
 
-The ``hpc-codecov`` executable does not try to find out the location
-of ``.tix`` and ``mix`` files. Instead, let the user to explicitly
-specify the file paths and directories. The rational behind the
-decision is to support multiple versions of multiple build tools, such
-as [cabal-install](http://hackage.haskell.org/package/cabal-install)
-legacy v1-style build, v2-style build, and
-[stack](https://docs.haskellstack.org/en/stable/README/).
+The ``hpc-codecov`` executable can search ``.tix`` and ``mix`` files
+under the directories made by the
+[cabal-install](http://hackage.haskell.org/package/cabal-install) and
+[stack](https://docs.haskellstack.org/en/stable/README/) build tools.
+The executable also has options to explicitly specify the file paths
+and directories for ``.tix`` and ``mix`` files, to support generating
+reports with test data made by other build tools than
+``cabal-install`` and ``stack``.
+
+
+Installing
+----------
+
+### From Package Repository
+
+``hpc-codecov`` is available from
+[Hackage](https://hackage.haskell.org/package/hpc-codecov) and
+[Stackage](https://www.stackage.org/lts/package/hpc-codecov).  To
+install with ``cabal-install``, run:
+
+```console
+$ cabal install hpc-codecov
+```
+
+To install with ``stack``, run:
+
+```console
+$ stack install hpc-codecov
+```
+
+### Pre-compiled binaries
+
+For Windows, MacOS, and Linux (with glibc and libgmp), pre-compiled
+binary executables are available
+[here](https://github.com/8c6794b6/hpc-codecov/releases/latest).
+
+
+QuickStart
+----------
+
+To illustrate an example, initializing sample project named
+``my-project`` with ``cabal-install``:
+
+```console
+$ cabal --version
+cabal-install version 3.4.0.0
+compiled using version 3.4.0.0 of the Cabal library
+$ cabal init --simple --tests --test-dir=test -p my-project
+```
+
+Directory contents look like below:
+
+```console
+.
+├── app
+│   └── Main.hs
+├── CHANGELOG.md
+├── my-project.cabal
+├── src
+│   └── MyLib.hs
+└── tests
+    └── MyLibTest.hs
+```
+
+Run tests with coverage option:
+
+```console
+$ cabal test --enable-coverage
+```
+
+Write Codecov coverage report to ``codecov.json``:
+
+```console
+$ hpc-codecov cabal:my-project-test -X my-project -o codecov.json
+```
+
+Show coverage report contents:
+
+```console
+$ cat codecov.json
+{"coverage":{"test/MyLibTest.hs":{"4":1}}}
+```
+
+
+Using in GitHub workflow
+------------------------
+
+See
+[hpc-codecov-action](https://github.com/8c6794b6/hpc-codecov-action)
+to generate Codecov coverage report from GitHub workflow.
 
 
 Examples
 --------
 
-Following shows two examples for generating test coverage report of
-the ``hpc-codecov`` package itself, one with ``cabal-install``
+### Showing help
+
+Show usage information:
+
+```console
+$ hpc-codecov --help
+```
+
+### Project using cabal-install
+
+Search under directory made by ``cabal-install`` , generating a report
+for test suite named ``my-project-test``. Skip searching under the
+directories with base name ``my-project``, and exclude modules named
+``Main`` and ``Paths_my_project`` from the report. Note the use of
+comma to separate multiple values for the ``-x`` option:
+
+```console
+$ hpc-codecov -X my-project -x Main,Paths_my_project cabal:my-project-test
+```
+
+### Project using stack
+
+Search under directory made by ``stack`` for test suite named
+``my-project-test``, show verbose information, and write output to
+``codecov.json``:
+
+```console
+$ hpc-codecov --verbose -o codecov.json stack:my-project-test
+```
+
+### Project using stack, with multiple packages
+
+Search under directory made by ``stack`` for combined report of
+multiple cabal packages, and write output to ``codecov.json``:
+
+```consle
+$ hpc-codecov stack:all -o codecov.json
+```
+
+
+Low-level examples
+------------------
+
+The following shows two examples for generating a test coverage report
+of the ``hpc-codecov`` package itself without specifying the build
+tool. One with using the build artifacts made by ``cabal-install``
 Nix-style local build commands, and another with ``stack``.
 
 ### With cabal-install
@@ -34,8 +164,8 @@ First, run the tests with coverage option to generate ``.tix`` and
 
 ```console
 $ cabal --version
-cabal-install version 3.0.0.0
-compiled using version 3.0.0.0 of the Cabal library
+cabal-install version 3.4.0.0
+compiled using version 3.4.0.0 of the Cabal library
 $ cabal v2-configure --enable-test --enable-coverage
 $ cabal v2-test
 ```
@@ -44,7 +174,7 @@ Then generate a Codecov JSON coverage data from the ``.tix`` and
 ``.mix`` files:
 
 ```console
-$ proj=hpc-codecov-0.1.0.0
+$ proj=hpc-codecov-0.3.0.0
 $ tix=$(find ./dist-newstyle -name $proj.tix)
 $ mix=$(find ./dist-newstyle -name vanilla -print -quit)/mix/$proj
 $ hpc-codecov --mix=$mix --exclude=Paths_hpc_codecov --out=codecov.json $tix
@@ -58,14 +188,14 @@ report. Observing the contents of ``codecov.json`` with
 $ jq . codecov.json | head -10
 {
   "coverage": {
-    "src/Trace/Hpc/Codecov/Error.hs": {
-      "27": 1,
-      "30": 1,
-      "31": 1,
-      "32": 1,
-      "33": 1,
-      "34": 1,
-      "51": 0,
+    "src/Trace/Hpc/Codecov/Options.hs": {
+      "48": 1,
+      "50": 1,
+      "52": 1,
+      "54": 1,
+      "56": 1,
+      "59": 1,
+      "63": 1,
 ```
 
 Send the resulting JSON report file to Codecov with the [bash
@@ -80,10 +210,11 @@ $ bash <(curl -s https://codecov.io/bash)
 
 According to the Codecov
 [FAQ](https://docs.codecov.io/docs/frequently-asked-questions), the
-uploader should work from [Travis](https://travis-ci.org/),
-[CircleCI](https://circleci.com/), and
-[AppVeyor](https://www.appveyor.com/) for public projects without
-Codecov token.
+uploader should work from [Travis](https://travis-ci.com/),
+[CircleCI](https://circleci.com/),
+[Azure](https://azure.microsoft.com/en-us/services/devops/pipelines),
+and [GitHub Actions](https://github.com/features/actions) for public
+projects without the Codecov token.
 
 
 ### With stack
@@ -92,7 +223,7 @@ Build the package and run the tests with coverage option:
 
 ```console
 $ stack --numeric-version
-2.3.3
+2.5.1
 $ stack build --test --coverage
 ```
 
