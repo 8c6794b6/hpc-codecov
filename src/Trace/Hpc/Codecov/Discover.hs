@@ -4,7 +4,7 @@
 -- License:    BSD3
 -- Maintainer: 8c6794b6 <8c6794b6@gmail.com>
 --
--- Walk through directory and find hpc data.
+-- Walk through directories and find hpc data.
 
 module Trace.Hpc.Codecov.Discover
   ( -- * Discover function and types
@@ -14,26 +14,26 @@ module Trace.Hpc.Codecov.Discover
 
     -- * Auxiliary
   , foldDir
-  , foldDirWithIgnoring
   , defaultIgnored
+  , foldDirWithIgnoring
   ) where
 
 -- base
-import Control.Exception        (throwIO)
-import Control.Monad            (when)
-import Data.Maybe               (isNothing)
-import System.IO                (hPutStrLn, stderr)
+import Control.Exception           (throwIO)
+import Control.Monad               (when)
+import Data.Maybe                  (isNothing)
+import System.IO                   (hPutStrLn, stderr)
 
 -- directory
-import System.Directory         (doesDirectoryExist, doesFileExist,
-                                 listDirectory)
+import System.Directory            (doesDirectoryExist, doesFileExist,
+                                    listDirectory)
 
 -- filepath
-import System.FilePath          (splitFileName, takeExtension,
-                                 takeFileName, (<.>), (</>))
+import System.FilePath             (splitFileName, takeExtension,
+                                    takeFileName, (<.>), (</>))
 
 -- Internal
-import Trace.Hpc.Codecov.Error
+import Trace.Hpc.Codecov.Exception
 import Trace.Hpc.Codecov.Report
 
 
@@ -43,7 +43,7 @@ import Trace.Hpc.Codecov.Report
 --
 -- ------------------------------------------------------------------------
 
--- | Data type to hold arguments to 'discover' function.
+-- | Data type to hold arguments of 'discover' function.
 data DiscoverArgs = DiscoverArgs
   { da_tool      :: BuildTool
     -- ^ Tool used to build Haskell cabal package.
@@ -140,10 +140,13 @@ say da msg = when (da_verbose da) $ hPutStrLn stderr msg
 
 findSrcDirsAndBuildDirs
   :: DiscoverArgs -> String -> IO ([FilePath], [FilePath])
-findSrcDirsAndBuildDirs da build_dir = foldDirWithIgnoring ignored f z ds
+findSrcDirsAndBuildDirs da build_dir = do
+    ds <- if null $ da_root da
+        then listDirectory "."
+        else pure [da_root da]
+    foldDirWithIgnoring ignored f z ds
   where
     z = ([], [])
-    ds = [da_root da]
     f p acc@(src_dirs, dirs)
       | takeExtension p_file == ".cabal" = pure (p_dir:src_dirs, dirs)
       | p_file == build_dir  = pure (src_dirs, p:dirs)
@@ -234,20 +237,32 @@ findVanilla ignored p acc@(mb_tix, dirs) = do
          else return (mb_tix, dirs)
     else return acc
 
+
 -- ------------------------------------------------------------------------
 --
 -- Simple directory walker
 --
 -- ------------------------------------------------------------------------
 
+-- | Variant of 'foldDirWithIgnoring' with 'defaultIgnored'.
 foldDir :: (FilePath -> a -> IO a) -> a -> [FilePath] -> IO a
 foldDir = foldDirWithIgnoring defaultIgnored
 
-defaultIgnored :: [FilePath]
+-- | Default directory base names to ignore.
+defaultIgnored :: [String]
 defaultIgnored = [".git", ".github"]
 
+-- | Fold under given directory.
 foldDirWithIgnoring
-  :: [FilePath] -> (FilePath -> a -> IO a) -> a -> [FilePath] -> IO a
+  :: [String]
+  -- ^ Directory base names to skip.
+  -> (FilePath -> a -> IO a)
+  -- ^ Accumulator function.
+  -> a
+  -- ^ Initial accumulator value.
+  -> [FilePath]
+  -- ^ Directories to walk through.
+  -> IO a
 foldDirWithIgnoring ignored f = go
   where
     go acc0 [] = return acc0

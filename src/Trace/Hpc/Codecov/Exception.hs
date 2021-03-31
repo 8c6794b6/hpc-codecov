@@ -1,12 +1,12 @@
 -- |
--- Module:     Trace.Hpc.Codecov.Error
+-- Module:     Trace.Hpc.Codecov.Exception
 -- Copyright:  (c) 2020 8c6794b6
 -- License:    BSD3
 -- Maintainer: 8c6794b6 <8c6794b6@gmail.com>
 --
 -- Error and exception related codes.
 
-module Trace.Hpc.Codecov.Error
+module Trace.Hpc.Codecov.Exception
   (
     -- * Exception data type and handler
     HpcCodecovError(..)

@@ -21,41 +21,42 @@ module Trace.Hpc.Codecov.Report
   ) where
 
 -- base
-import Control.Exception       (ErrorCall, handle, throw, throwIO)
-import Control.Monad           (mplus, when)
-import Control.Monad.ST        (ST)
-import Data.Function           (on)
-import Data.List               (foldl', intersperse)
-import System.IO               (IOMode (..), hPutStrLn, stderr, stdout,
-                                withFile)
+import Control.Exception           (ErrorCall, handle, throw, throwIO)
+import Control.Monad               (mplus, when)
+import Control.Monad.ST            (ST)
+import Data.Function               (on)
+import Data.List                   (foldl', intersperse)
+import System.IO                   (IOMode (..), hPutStrLn, stderr, stdout,
+                                    withFile)
 #if !MIN_VERSION_base(4,11,0)
-import Data.Monoid             ((<>))
+import Data.Monoid                 ((<>))
 #endif
 
 -- array
-import Data.Array.Base         (unsafeAt)
-import Data.Array.IArray       (bounds, listArray, range, (!))
-import Data.Array.MArray       (newArray, readArray, writeArray)
-import Data.Array.ST           (STUArray, runSTUArray)
-import Data.Array.Unboxed      (UArray)
+import Data.Array.Base             (unsafeAt)
+import Data.Array.IArray           (bounds, listArray, range, (!))
+import Data.Array.MArray           (newArray, readArray, writeArray)
+import Data.Array.ST               (STUArray, runSTUArray)
+import Data.Array.Unboxed          (UArray)
 
 -- bytestring
-import Data.ByteString.Builder (Builder, char7, hPutBuilder, intDec,
-                                string7, stringUtf8)
+import Data.ByteString.Builder     (Builder, char7, hPutBuilder, intDec,
+                                    string7, stringUtf8)
 
 -- directory
-import System.Directory        (doesFileExist)
+import System.Directory            (doesFileExist)
 
 -- filepath
-import System.FilePath         ((<.>), (</>))
+import System.FilePath             ((<.>), (</>))
 
 -- hpc
-import Trace.Hpc.Mix           (BoxLabel (..), Mix (..), MixEntry, readMix)
-import Trace.Hpc.Tix           (Tix (..), TixModule (..), readTix)
-import Trace.Hpc.Util          (HpcPos, fromHpcPos)
+import Trace.Hpc.Mix               (BoxLabel (..), Mix (..), MixEntry,
+                                    readMix)
+import Trace.Hpc.Tix               (Tix (..), TixModule (..), readTix)
+import Trace.Hpc.Util              (HpcPos, fromHpcPos)
 
 -- Internal
-import Trace.Hpc.Codecov.Error
+import Trace.Hpc.Codecov.Exception
 
 
 -- ------------------------------------------------------------------------

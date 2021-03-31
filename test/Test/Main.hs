@@ -397,7 +397,7 @@ findUnder test root = foldDir f Nothing [root]
 -- | Wrapper to run 'Trace.Hpc.Codecov.Main.main' with given argument
 -- strings.
 main' :: [String] -> IO ()
-main' args = withArgs args HpcCodecov.main
+main' args = withArgs args HpcCodecov.defaultMain
 
 sraMain :: SRA -> IO ()
 sraMain sra = main' args

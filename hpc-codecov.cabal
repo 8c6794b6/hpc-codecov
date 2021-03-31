@@ -47,12 +47,12 @@ tested-with:           GHC == 8.2.2
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Trace.Hpc.Codecov.Error
-                       Trace.Hpc.Codecov.Main
-                       Trace.Hpc.Codecov.Options
+  exposed-modules:     Trace.Hpc.Codecov.Exception
                        Trace.Hpc.Codecov.Discover
+                       Trace.Hpc.Codecov.Main
                        Trace.Hpc.Codecov.Report
                        Paths_hpc_codecov
+  other-modules:       Trace.Hpc.Codecov.Options
   autogen-modules:     Paths_hpc_codecov
   build-depends:       base        >= 4.10  && < 5
                      , array       >= 0.1   && < 0.6
@@ -64,7 +64,7 @@ library
   ghc-options:         -Wall
 
 executable hpc-codecov
-  hs-source-dirs:      exec
+  hs-source-dirs:      app
   main-is:             hpc-codecov.hs
   build-depends:       base
                      , hpc-codecov

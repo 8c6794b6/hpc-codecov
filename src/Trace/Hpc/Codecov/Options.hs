@@ -27,20 +27,20 @@ module Trace.Hpc.Codecov.Options
   ) where
 
 -- base
-import Control.Exception          (throw, throwIO)
-import Data.Version               (showVersion)
-import System.Console.GetOpt      (ArgDescr (..), ArgOrder (..),
-                                   OptDescr (..), getOpt, usageInfo)
-import System.Environment         (getProgName)
+import Control.Exception           (throw, throwIO)
+import Data.Version                (showVersion)
+import System.Console.GetOpt       (ArgDescr (..), ArgOrder (..),
+                                    OptDescr (..), getOpt, usageInfo)
+import System.Environment          (getProgName)
 
 -- directory
-import System.Directory           (doesFileExist)
+import System.Directory            (doesFileExist)
 
 
 -- Internal
-import Paths_hpc_codecov          (version)
+import Paths_hpc_codecov           (version)
 import Trace.Hpc.Codecov.Discover
-import Trace.Hpc.Codecov.Error
+import Trace.Hpc.Codecov.Exception
 import Trace.Hpc.Codecov.Report
 
 -- | Options for generating test coverage report.
@@ -84,7 +84,7 @@ emptyOptions = Options
   , optExcludes = []
   , optOutFile = Nothing
   , optVerbose = False
-  , optProjectRoot = "."
+  , optProjectRoot = ""
   , optBuildDir = Nothing
   , optSkipDirs = []
   , optShowVersion = False
@@ -110,15 +110,15 @@ options =
   , Option ['s'] ["srcdir"]
            (ReqArg (\d o -> o {optSrcDirs = uncommas d ++ optSrcDirs o})
                    "DIR")
-           "source directory, can repeat\n\
+           "Source directory, can repeat\n\
            \(default: current directory)"
   , Option ['x'] ["exclude"]
            (ReqArg (\m o -> o {optExcludes = uncommas m ++ optExcludes o})
                    "MODULE")
-           "module name to exclude, can repeat"
+           "Module name to exclude, can repeat"
   , Option ['o'] ["out"]
            (ReqArg (\p o -> o {optOutFile = Just p}) "FILE")
-           "output file\n\
+           "Output file\n\
            \(default: stdout)"
 
   , Option ['r'] ["root"]
@@ -127,7 +127,7 @@ options =
            "Project root directory for TOOL\n\
            \Usually the directory containing\n\
            \'stack.yaml' or 'cabal.project'\n\
-           \(default: .)"
+           \(default: current directory)"
   , Option ['b'] ["builddir"]
            (ReqArg (\d o -> o {optBuildDir = Just d})
                    "DIR")
@@ -143,16 +143,16 @@ options =
 
   , Option ['v'] ["verbose"]
            (NoArg (\o -> o {optVerbose = True}))
-           "show verbose output"
+           "Show verbose output"
   , Option [] ["version"]
            (NoArg (\o -> o {optShowVersion = True}))
-           "show versoin and exit"
+           "Show versoin and exit"
   , Option [] ["numeric-version"]
            (NoArg (\o -> o {optShowNumeric = True}))
-           "show numeric version and exit"
+           "Show numeric version and exit"
   , Option ['h'] ["help"]
            (NoArg (\o -> o {optShowHelp = True}))
-           "show this help and exit"
+           "Show this help and exit"
   ]
 
 -- | Parse command line argument and return either error messages or
