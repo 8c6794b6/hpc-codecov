@@ -60,7 +60,7 @@ data Options = Options
     -- ^ Flag for showing verbose message during coverage report
     -- generation.
 
-  , optProjectRoot :: FilePath
+  , optRootDir :: FilePath
     -- ^ Project root directory for the build tool.
   , optBuildDir    :: Maybe FilePath
     -- ^ Name of the build directory used by the build tool
@@ -84,7 +84,7 @@ emptyOptions = Options
   , optExcludes = []
   , optOutFile = Nothing
   , optVerbose = False
-  , optProjectRoot = ""
+  , optRootDir = ""
   , optBuildDir = Nothing
   , optSkipDirs = []
   , optShowVersion = False
@@ -121,8 +121,8 @@ options =
            "Output file\n\
            \(default: stdout)"
 
-  , Option ['r'] ["root"]
-           (ReqArg (\d o -> o {optProjectRoot = d})
+  , Option ['r'] ["rootdir"]
+           (ReqArg (\d o -> o {optRootDir = d})
                    "DIR")
            "Project root directory for TOOL\n\
            \Usually the directory containing\n\
@@ -135,7 +135,7 @@ options =
            \(default:\n\
            \ - '.stack-work' for stack\n\
            \ - 'dist-newstyle' for cabal)"
-  , Option ['X'] ["skip"]
+  , Option ['X'] ["skipdir"]
            (ReqArg (\d o -> o {optSkipDirs = uncommas d ++ optSkipDirs o})
                    "DIR")
            "Basename of directory to skip while\n\
@@ -228,7 +228,7 @@ opt2rpt opt = do
       rpt2 <- discover DiscoverArgs
         { da_tool = tool
         , da_testsuite = name
-        , da_root = optProjectRoot opt
+        , da_rootdir = optRootDir opt
         , da_builddir = optBuildDir opt
         , da_skipdirs = optSkipDirs opt
         , da_verbose = verbose
