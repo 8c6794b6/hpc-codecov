@@ -277,12 +277,12 @@ discoverStackTest =
         (a,r) -> withResource a r (const act)
   in  testGroup "discover_stack"
         [ t "project1"
-          [ "--root=" ++ testData "project1"
+          [ "--rootdir=" ++ testData "project1"
           , "--verbose"
           , "stack:project1-test"]
           []
         , t "project1"
-          [ "--root=" ++ testData "project1"
+          [ "--rootdir=" ++ testData "project1"
           , "--verbose"
           , "--builddir=dot-stack-work"
           , "stack:project1-test.tix"]

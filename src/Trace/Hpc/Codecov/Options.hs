@@ -121,7 +121,7 @@ options =
            "Output file\n\
            \(default: stdout)"
 
-  , Option ['r'] ["root"]
+  , Option ['r'] ["rootdir"]
            (ReqArg (\d o -> o {optProjectRoot = d})
                    "DIR")
            "Project root directory for TOOL\n\
@@ -135,7 +135,7 @@ options =
            \(default:\n\
            \ - '.stack-work' for stack\n\
            \ - 'dist-newstyle' for cabal)"
-  , Option ['X'] ["skip"]
+  , Option ['X'] ["skipdir"]
            (ReqArg (\d o -> o {optSkipDirs = uncommas d ++ optSkipDirs o})
                    "DIR")
            "Basename of directory to skip while\n\
