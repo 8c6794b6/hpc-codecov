@@ -102,12 +102,12 @@ defaultOptions = emptyOptions
 -- | Commandline option oracle.
 options :: [OptDescr (Options -> Options)]
 options =
-  [ Option ['m'] ["mixdir"]
+  [ Option ['m'] ["mix"]
            (ReqArg (\d o -> o {optMixDirs = uncommas d ++ optMixDirs o})
                    "DIR")
             ".mix file directory, can repeat\n\
             \(default: .hpc)"
-  , Option ['s'] ["srcdir"]
+  , Option ['s'] ["src"]
            (ReqArg (\d o -> o {optSrcDirs = uncommas d ++ optSrcDirs o})
                    "DIR")
            "Source directory, can repeat\n\
@@ -121,21 +121,21 @@ options =
            "Output file\n\
            \(default: stdout)"
 
-  , Option ['r'] ["rootdir"]
+  , Option ['r'] ["root"]
            (ReqArg (\d o -> o {optRootDir = d})
                    "DIR")
            "Project root directory for TOOL\n\
            \Usually the directory containing\n\
            \'stack.yaml' or 'cabal.project'\n\
            \(default: current directory)"
-  , Option ['b'] ["builddir"]
+  , Option ['b'] ["build"]
            (ReqArg (\d o -> o {optBuildDir = Just d})
                    "DIR")
-           "Name of directory made by the TOOL\n\
+           "Build directory made by the TOOL\n\
            \(default:\n\
            \ - '.stack-work' for stack\n\
            \ - 'dist-newstyle' for cabal)"
-  , Option ['X'] ["skipdir"]
+  , Option ['X'] ["skip"]
            (ReqArg (\d o -> o {optSkipDirs = uncommas d ++ optSkipDirs o})
                    "DIR")
            "Basename of directory to skip while\n\
