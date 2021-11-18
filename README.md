@@ -11,8 +11,7 @@ for generating [Codecov](https://codecov.io) JSON coverage report from
 ``.tix`` and ``.mix`` files made with
 [hpc](https://hackage.haskell.org/package/hpc). The generated report
 is ready to be uploaded to Codecov with other tools such as [Codecov
-Bash
-uploader](https://docs.codecov.io/docs/about-the-codecov-bash-uploader).
+uploader](https://docs.codecov.com/docs/codecov-uploader).
 
 The ``hpc-codecov`` executable can search ``.tix`` and ``mix`` files
 under the directories made by the
@@ -198,14 +197,14 @@ $ jq . codecov.json | head -10
       "63": 1,
 ```
 
-Send the resulting JSON report file to Codecov with the [bash
-uploader](https://github.com/codecov/codecov-bash/). The file name
+Send the resulting JSON report file to Codecov with the [Codecov
+uploader](https://github.com/codecov/uploader). The file name
 ``codecov.json`` is listed in the uploader script as one of the file
 name patterns to upload, no need to specify the report filename
 explicitly:
 
 ```console
-$ bash <(curl -s https://codecov.io/bash)
+$ codecov -t ${CODECOV_TOKEN}
 ```
 
 According to the Codecov
@@ -214,7 +213,8 @@ uploader should work from [Travis](https://travis-ci.com/),
 [CircleCI](https://circleci.com/),
 [Azure](https://azure.microsoft.com/en-us/services/devops/pipelines),
 and [GitHub Actions](https://github.com/features/actions) for public
-projects without the Codecov token.
+projects without the Codecov token (i.e., without the `-t
+${CODECOV_TOKEN}` option).
 
 
 ### With stack
@@ -236,12 +236,6 @@ $ hpcroot=$(stack path --local-hpc-root)
 $ tix=$(find $hpcroot -name 'test-main.tix')
 $ mix=$(stack path --dist-dir)/hpc
 $ hpc-codecov --mix=$mix --exclude=Paths_hpc_codecov -o codecov.json $tix
-```
-
-Then send the resulting report file:
-
-```console
-$ bash <(curl -s https://codecov.io/bash)
 ```
 
 
