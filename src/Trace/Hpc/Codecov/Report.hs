@@ -89,7 +89,9 @@ instance Semigroup Report where
 
 instance Monoid Report where
   mempty = emptyReport
+#if !MIN_VERSION_base(4,16,0)
   mappend = mappendReport
+#endif
 
 emptyReport :: Report
 emptyReport = Report
