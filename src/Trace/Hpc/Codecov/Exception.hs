@@ -1,6 +1,6 @@
 -- |
 -- Module:     Trace.Hpc.Codecov.Exception
--- Copyright:  (c) 2020 8c6794b6
+-- Copyright:  (c) 2022 8c6794b6
 -- License:    BSD3
 -- Maintainer: 8c6794b6 <8c6794b6@gmail.com>
 --

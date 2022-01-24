@@ -1,7 +1,7 @@
 {-# OPTIONS_HADDOCK hide #-}
 -- |
 -- Module:     Trace.Hpc.Codecov.Options
--- Copyright:  (c) 2020 8c6794b6
+-- Copyright:  (c) 2022 8c6794b6
 -- License:    BSD3
 -- Maintainer: 8c6794b6 <8c6794b6@gmail.com>
 --
@@ -60,7 +60,7 @@ data Options = Options
     -- ^ Flag for showing verbose message during coverage report
     -- generation.
 
-  , optRootDir :: FilePath
+  , optRootDir     :: FilePath
     -- ^ Project root directory for the build tool.
   , optBuildDir    :: Maybe FilePath
     -- ^ Name of the build directory used by the build tool
