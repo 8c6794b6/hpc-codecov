@@ -86,7 +86,9 @@ jobs:
         $STACK exec -- hpc-codecov --verbose --mix=$MIX -o codecov.json $TIX
 
     - name: Upload coverage report
-      run: bash <(curl -s https://codecov.io/bash) -n gh-stack-${{ matrix.os }}
+      uses: codecov/codecov-action@v2
+      with:
+        name: gh-stack-${{ matrix.os }}
 
   cabal-install:
     strategy:
