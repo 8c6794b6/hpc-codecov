@@ -310,7 +310,7 @@ discoverStackTest =
 discoverCabalTest :: TestTree
 discoverCabalTest =
   let t = buildAndTestWithCabal
-      withProject name act = case getAcquireAndRelease Stack name [] of
+      withProject name act = case getAcquireAndRelease Cabal name [] of
         (a,r) -> withResource a r (const act)
   in  testGroup "discover_cabal"
         [ t "project1"
