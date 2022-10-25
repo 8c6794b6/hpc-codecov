@@ -1,20 +1,18 @@
 # See: https://hub.zhox.com/posts/introducing-haskell-dev/
+# for settings with cabal-install.
 
-environment:
-  global:
-    CABOPTS: --store-dir=C:\\SR --http-transport=plain-http
-    GHCVER: 9.2.4
+# environment:
+#   global:
+#     CABOPTS: --store-dir=C:\\SR --http-transport=plain-http
+#     GHCVER: 9.4.2
+#     CABALVER: 3.8.1.0
 
 install:
-  - choco source add -n mistuke -s  https://www.myget.org/F/mistuke/api/v2
-  - choco install -y cabal --version 3.6.2.0
-  - choco install -y ghc --version %GHCVER%
+  - choco install -y haskell-stack
   - refreshenv
 
 before_build:
-  - cabal --version
-  - ghc --version
-  - cabal %CABOPTS% v2-update
+  - stack setup
 
 clone_folder: "c:\\WORK"
 
@@ -22,17 +20,7 @@ cache:
   - C:\sr
 
 build_script:
-  - cabal %CABOPTS% v2-configure --enable-test --enable-coverage
-  - cabal %CABOPTS% v2-build
-  - cabal %CABOPTS% v2-test
-  - cabal %CABOPTS% v2-exec -- hpc-codecov --numeric-version > v.txt
-  - set /p VERSION=<v.txt
-  - set G=C:\WORK\dist-newstyle\build\x86_64-windows\ghc-%GHCVER%
-  - set PROJ=hpc-codecov-%VERSION%
-  - set VANILLA=%G%\%PROJ%\hpc\vanilla
-  - set MIX=%VANILLA%\mix\%PROJ%
-  - set TIX=%VANILLA%\tix\%PROJ%\%PROJ%.tix
-  - set OUT=codecov.json
-  - cabal %CABOPTS% v2-exec -- hpc-codecov --mix=%MIX% -o %OUT% %TIX%
-  - curl -s https://codecov.io/bash > codecov.sh
-  - bash codecov.sh
+  - stack build --test --coverage
+  - stack exec -- hpc-codecov --verbose stack:test-main -o codecov.json
+  - curl -Os https://uploader.codecov.io/latest/windows/codecov.exe
+  - .\codecov.exe
