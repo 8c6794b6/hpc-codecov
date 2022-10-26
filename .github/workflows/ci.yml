@@ -40,13 +40,13 @@ jobs:
         echo os=$os
         case $os in
           "Linux")
-             echo "::set-output name=path::$HOME/.stack"
+             echo "path=$HOME/.stack" >> $GITHUB_OUTPUT
              ;;
           "macOS")
-             echo "::set-output name=path::$HOME/.stack"
+             echo "path=$HOME/.stack" >> $GITHUB_OUTPUT
              ;;
           *)
-             echo "::set-output name=path::C:/Users/runneradmin/AppData/Roaming/stack"
+             echo "path=C:/Users/runneradmin/AppData/Roaming/stack" >> $GITHUB_OUTPUT
              ;;
         esac
 
@@ -116,11 +116,11 @@ jobs:
       - name: Set .exe extension on windows
         if: matrix.os == 'windows-latest'
         id: extension
-        run: echo "::set-output name=exe::.exe"
+        run: echo "exe=.exe" >> $GITHUB_OUTPUT
 
       - name: Set executable
         id: bin
-        run: echo "::set-output name=path::bin/hpc-codecov-${{ runner.os }}${{ steps.extension.outputs.exe }}"
+        run: echo "path=bin/hpc-codecov-${{ runner.os }}${{ steps.extension.outputs.exe }}" >> $GITHUB_OUTPUT
 
       - name: Create bin directory
         run: mkdir ./bin/
