@@ -86,7 +86,7 @@ jobs:
         $STACK exec -- hpc-codecov --verbose --mix=$MIX -o codecov.json $TIX
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v2
+      uses: codecov/codecov-action@v3
       with:
         name: gh-stack-${{ matrix.os }}
 
@@ -172,7 +172,7 @@ jobs:
           excludes: Main,Test.Main,Paths_hpc_codecov
 
       - name: Send coverage report
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v3
         with:
           name: hpc-codecov-action
 
