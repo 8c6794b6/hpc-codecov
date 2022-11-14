@@ -53,14 +53,14 @@ jobs:
     - name: Cache stack root
       if: runner.os != 'macOS'
       id: stack-global
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ${{ steps.stack-root.outputs.path }}
         key: ${{ runner.os }}-stack-global-${{ hashFiles('**.yaml') }}-${{ env.cache-version }}
 
     - name: Cache windows optional data for stack
       if: matrix.os == 'windows-latest'
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: C:\Users\runneradmin\AppData\Local\Programs\stack
         key: ${{ runner.os }}-stack-program-${{ hashFiles('**.yaml') }}-${{ env.cache-version }}
