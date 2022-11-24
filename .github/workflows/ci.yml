@@ -165,10 +165,9 @@ jobs:
         run: cabal test --enable-coverage
 
       - name: Generate coverage report
-        uses: 8c6794b6/hpc-codecov-action@v1
+        uses: 8c6794b6/hpc-codecov-action@v2
         with:
-          build-tool: cabal
-          test-suite: test-main
+          target: cabal:test-main
           excludes: Main,Test.Main,Paths_hpc_codecov
 
       - name: Send coverage report
