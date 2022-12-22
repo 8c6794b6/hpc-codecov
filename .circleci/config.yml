@@ -38,6 +38,7 @@ jobs:
       - run:
           name: Upload coverage report
           command: |
+            apt list curl || apt update
             apt install curl
             curl -Os https://uploader.codecov.io/latest/linux/codecov
             chmod +x codecov
