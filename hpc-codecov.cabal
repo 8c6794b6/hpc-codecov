@@ -53,12 +53,13 @@ library
                        Trace.Hpc.Codecov.Discover
                        Trace.Hpc.Codecov.Main
                        Trace.Hpc.Codecov.Report
-                       Paths_hpc_codecov
   other-modules:       Trace.Hpc.Codecov.Options
+                       Paths_hpc_codecov
   autogen-modules:     Paths_hpc_codecov
   build-depends:       base        >= 4.10  && < 5
                      , array       >= 0.1   && < 0.6
                      , bytestring  >= 0.10  && < 0.12
+                     , containers  >= 0.6   && < 0.8
                      , directory   >= 1.3.0 && < 1.4.0
                      , filepath    >= 1.4.1 && < 1.5
                      , hpc         >= 0.6   && < 0.7

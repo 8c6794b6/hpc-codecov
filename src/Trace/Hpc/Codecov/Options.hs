@@ -56,6 +56,9 @@ data Options = Options
   , optOutFile     :: Maybe FilePath
     -- ^ Output file to write JSON report, if given.
 
+  , optFormat      :: String
+    -- ^ Format of generated report.
+
   , optVerbose     :: Bool
     -- ^ Flag for showing verbose message during coverage report
     -- generation.
@@ -83,6 +86,7 @@ emptyOptions = Options
   , optSrcDirs = []
   , optExcludes = []
   , optOutFile = Nothing
+  , optFormat = "codecov"
   , optVerbose = False
   , optRootDir = ""
   , optBuildDir = Nothing
@@ -140,6 +144,13 @@ options =
                    "DIR")
            "Basename of directory to skip while\n\
            \searching data for TOOL, can repeat"
+
+  , Option ['f'] ["format"]
+           (ReqArg (\s o -> o {optFormat = s})
+                   "FMT")
+           "Format of generated report\n\
+           \'codecov' or 'lcov'\n\
+           \(default: codecov)"
 
   , Option ['v'] ["verbose"]
            (NoArg (\o -> o {optVerbose = True}))
@@ -202,6 +213,12 @@ parseTarget str = do
        (tool, ':':_)       -> throwIO $ InvalidBuildTool tool
        _                   -> pure $ TixFile str
 
+parseFormat :: String -> IO Format
+parseFormat fmt = case fmt of
+  "codecov" -> pure Codecov
+  "lcov"    -> pure Lcov
+  _         -> throwIO $ InvalidFormat fmt
+
 uncommas :: String -> [String]
 uncommas = go
   where
@@ -221,9 +238,11 @@ opt2rpt opt = do
         }
       tix = optTix opt
       verbose = optVerbose opt
+  format <- parseFormat (optFormat opt)
   target <- parseTarget tix
   case target of
-    TixFile path -> pure (rpt1 {reportTix = path})
+    TixFile path -> pure (rpt1 {reportTix = path
+                               ,reportFormat = format})
     TestSuite tool name -> do
       rpt2 <- discover DiscoverArgs
         { da_tool = tool
@@ -233,7 +252,7 @@ opt2rpt opt = do
         , da_skipdirs = optSkipDirs opt
         , da_verbose = verbose
         }
-      pure $ rpt1 `mappend` rpt2
+      pure $ rpt1 `mappend` rpt2 {reportFormat = format}
 
 -- | Print help messages.
 printHelp :: IO ()

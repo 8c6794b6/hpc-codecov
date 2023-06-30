@@ -101,6 +101,8 @@ cmdline = testGroup "cmdline"
               (shouldFail (main' ["foo:tests"]))
   , testCase "invalid-test-suite"
               (shouldFail (main' ["cabal:no-such-test"]))
+  , testCase "invalid-format"
+             (shouldFail (main' ["--format=foo"]))
   , testCase "help" (main' ["--help"])
   , testCase "version" (main' ["--version"])
   , testCase "numeric-version" (main' ["--numeric-version"])

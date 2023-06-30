@@ -49,7 +49,7 @@ data DiscoverArgs = DiscoverArgs
     -- ^ Tool used to build Haskell cabal package.
   , da_testsuite :: String
     -- ^ Test suite name to search for @.tix@ file.
-  , da_rootdir      :: FilePath
+  , da_rootdir   :: FilePath
     -- ^ The project root directory.
   , da_builddir  :: Maybe String
     -- ^ Name of the temporary build directory made by the build tool.

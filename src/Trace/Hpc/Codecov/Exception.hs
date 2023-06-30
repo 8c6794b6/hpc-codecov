@@ -47,6 +47,8 @@ data HpcCodecovError
    -- file.
   | InvalidBuildTool String
    -- ^ Invalid build tool.
+  | InvalidFormat String
+   -- ^ Invalid report format.
   | TestSuiteNotFound String
    -- ^ Test suite was given, but not found.
   | InvalidArgs [String]
@@ -65,6 +67,7 @@ hpcCodecovErrorMessage e =
     MixNotFound mix locs -> searchedLocations "mix" mix locs
     SrcNotFound src locs -> searchedLocations "src" src locs
     InvalidBuildTool tool-> "invalid build tool: `" ++ tool ++ "'\n"
+    InvalidFormat fmt -> "invalid format: `" ++ fmt ++ "'\n"
     TestSuiteNotFound name ->
       "cannot find tix for test suite: " ++ show name ++ "\n"
     InvalidArgs msgs ->
