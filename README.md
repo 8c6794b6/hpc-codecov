@@ -1,14 +1,14 @@
 # hpc-codecov [![Hackage](https://img.shields.io/hackage/v/hpc-codecov)](https://hackage.haskell.org/package/hpc-codecov) [![Stackage](https://www.stackage.org/package/hpc-codecov/badge/lts)](https://www.stackage.org/lts/package/hpc-codecov)
 
 [![codecov](https://codecov.io/gh/8c6794b6/hpc-codecov/branch/master/graph/badge.svg)](https://codecov.io/gh/8c6794b6/hpc-codecov)
-[![Travis](http://img.shields.io/travis/8c6794b6/codecov-haskell/master.svg?logo=travis)](https://travis-ci.com/8c6794b6/hpc-codecov)
 [![CircleCI](https://img.shields.io/circleci/build/gh/8c6794b6/hpc-codecov/master?logo=circleci)](https://circleci.com/gh/8c6794b6/hpc-codecov)
 [![AppVeyor](https://ci.appveyor.com/api/projects/status/dijqtsoqgc26oghj?svg=true)](https://ci.appveyor.com/project/8c6794b6/hpc-codecov)
 [![GitHub](https://img.shields.io/github/actions/workflow/status/8c6794b6/hpc-codecov/ci.yml?branch=master&logo=github)](https://github.com/8c6794b6/hpc-codecov/actions/workflows/ci.yml)
 
 The ``hpc-codecov`` package contains an executable and library codes
-for generating [Codecov](https://codecov.io) JSON coverage report from
-``.tix`` and ``.mix`` files made with
+for generating [Codecov](https://codecov.io) JSON coverage report or
+[LCOV](https://github.com/linux-test-project/lcov) tracefile report
+from ``.tix`` and ``.mix`` files made with
 [hpc](https://hackage.haskell.org/package/hpc). The generated report
 is ready to be uploaded to Codecov with other tools such as [Codecov
 uploader](https://docs.codecov.com/docs/codecov-uploader).
@@ -147,6 +147,16 @@ multiple cabal packages, and write output to ``codecov.json``:
 $ hpc-codecov stack:all -o codecov.json
 ```
 
+### Project using stack, with multiple packages, generate LCOV tracefile
+
+Search under directory made by ``stack`` for combined report of
+multiple cabal packages, and write output report in LCOV tracefile
+format to ``lcov.info``:
+
+```consle
+$ hpc-codecov stack:all -f lcov -o lcov.info
+```
+
 
 Low-level examples
 ------------------
@@ -173,7 +183,7 @@ Then generate a Codecov JSON coverage data from the ``.tix`` and
 ``.mix`` files:
 
 ```console
-$ proj=hpc-codecov-0.3.0.0
+$ proj=hpc-codecov-0.4.0.0
 $ tix=$(find ./dist-newstyle -name $proj.tix)
 $ mix=$(find ./dist-newstyle -name vanilla -print -quit)/mix/$proj
 $ hpc-codecov --mix=$mix --exclude=Paths_hpc_codecov --out=codecov.json $tix
