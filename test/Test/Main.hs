@@ -3,46 +3,47 @@
 module Test.Main (main) where
 
 -- base
-import           Control.Exception          (SomeException (..), try)
-import           Control.Monad              (when)
-import           Data.List                  (isSubsequenceOf)
-import           Data.Maybe                 (fromMaybe, isJust)
-import           System.Environment         (getExecutablePath, lookupEnv,
-                                             setEnv, unsetEnv, withArgs)
-import           System.Exit                (ExitCode)
-import           System.IO                  (hClose, openTempFile)
+import           Control.Exception           (SomeException (..), try)
+import           Control.Monad               (when)
+import           Data.List                   (isSubsequenceOf)
+import           Data.Maybe                  (fromMaybe, isJust)
+import           System.Environment          (getExecutablePath, lookupEnv,
+                                              setEnv, unsetEnv, withArgs)
+import           System.Exit                 (ExitCode)
+import           System.IO                   (hClose, openTempFile)
 
 #if !MIN_VERSION_base(4,11,0)
-import           Data.Monoid                ((<>))
+import           Data.Monoid                 ((<>))
 #endif
 
 
 -- filepath
-import           System.FilePath            (takeFileName, (</>))
+import           System.FilePath             (takeFileName, (</>))
 
 -- directory
-import           System.Directory           (canonicalizePath,
-                                             doesDirectoryExist,
-                                             listDirectory,
-                                             removeDirectoryRecursive,
-                                             removeFile,
-                                             withCurrentDirectory)
+import           System.Directory            (canonicalizePath,
+                                              doesDirectoryExist,
+                                              listDirectory,
+                                              removeDirectoryRecursive,
+                                              removeFile,
+                                              withCurrentDirectory)
 
 -- process
-import           System.Process             (CreateProcess (..),
-                                             callProcess, shell,
-                                             waitForProcess,
-                                             withCreateProcess)
+import           System.Process              (CreateProcess (..),
+                                              callProcess, shell,
+                                              waitForProcess,
+                                              withCreateProcess)
 
 -- tasty
-import           Test.Tasty                 (TestTree, defaultMain,
-                                             testGroup, withResource)
-import           Test.Tasty.HUnit           (assertEqual, assertFailure,
-                                             testCase)
+import           Test.Tasty                  (TestTree, defaultMain,
+                                              testGroup, withResource)
+import           Test.Tasty.HUnit            (assertEqual, assertFailure,
+                                              testCase)
 
 -- Internal
 import           Trace.Hpc.Codecov.Discover
-import qualified Trace.Hpc.Codecov.Main     as HpcCodecov
+import           Trace.Hpc.Codecov.Exception
+import qualified Trace.Hpc.Codecov.Main      as HpcCodecov
 import           Trace.Hpc.Codecov.Report
 
 
@@ -65,10 +66,17 @@ main = do
     , "" ]
 
   defaultMain $ testGroup "main" $
-    [reportTest , cmdline, recipReport] ++
+    [reportTest, cmdline, recipReport, exceptionTest] ++
     [selfReportTest | not test_in_test, isJust mb_tool] ++
     [discoverStackTest | not test_in_test, mb_tool == Just Stack] ++
     [discoverCabalTest | not test_in_test, mb_tool == Just Cabal]
+
+exceptionTest :: TestTree
+exceptionTest = testGroup "exception"
+  [ testCase "NoTarget" $ assertEqual "NoTarget" "NoTarget" (show NoTarget)
+  , testCase "TixNotFound" $
+    assertEqual "TixNotFound" "TixNotFound \"foo\"" (show (TixNotFound "foo"))
+  ]
 
 reportTest :: TestTree
 reportTest = testGroup "report"
@@ -115,6 +123,12 @@ recipReport = testGroup "recip"
                     ,"--src=test/data/reciprocal"
                     ,"--exclude=NoSuchModule"
                     ,"--verbose"
+                    ,"test/data/reciprocal/reciprocal.tix"])
+  , testCase "recip-lcov-data-to-stdout"
+             (main' ["--mix=test/data/reciprocal/.hpc"
+                    ,"--src=test/data/reciprocal"
+                    ,"--verbose"
+                    ,"--format=lcov"
                     ,"test/data/reciprocal/reciprocal.tix"])
   , testCase "recip-data-no-src"
              (shouldFail
@@ -289,6 +303,12 @@ discoverStackTest =
           , "--build=dot-stack-work"
           , "stack:project1-test.tix"]
           ["--work-dir=dot-stack-work"]
+        , t "project1"
+          [ "--root=" ++ testData "project1"
+          , "--verbose"
+          , "--format=lcov"
+          , "stack:project1-test"]
+          []
 
         , withProject "project1" $
             testCase "project1" $
@@ -333,6 +353,7 @@ discoverCabalTest =
                   canonical_tix_path <- canonicalizePath tix_path
                   main' [ "--verbose"
                         , "-x", "Main,Paths_project1"
+                        , "-f", "lcov"
                         , "cabal:" ++ canonical_tix_path])
         ]
 

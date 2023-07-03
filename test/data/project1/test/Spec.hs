@@ -1,4 +1,6 @@
 import Lib
 
 main :: IO ()
-main = someFunc 42
+main = do
+  someFunc 42
+  anotherFunc 1 2 (-3)
