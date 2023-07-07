@@ -111,7 +111,7 @@ jobs:
           cabal --version
 
       - name: Configure
-        run: cabal configure --enable-executable-stripping
+        run: cabal configure -O2 --enable-executable-stripping
 
       - name: Set .exe extension on windows
         if: matrix.os == 'windows-latest'
