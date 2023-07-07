@@ -1,5 +1,17 @@
 # Revision history for hpc-codecov
 
+## 0.4.0.0 -- 2023-07
+
+Add "--format" option to select the output report format. Add LCOV
+tracefile format for generated report.
+
+Modify the generated report to preserve line hit counts.
+
+Add simple ``ByteString`` based parsers for reading ``.mix`` and
+``.tix`` files to improve performance.
+
+Remove ``Paths_hpc_codecov`` from exported modules.
+
 ## 0.3.0.0 -- 2021-04-02
 
 Modify command-line argument to support TOOL:TEST_SUITE style target,
