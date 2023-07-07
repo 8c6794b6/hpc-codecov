@@ -141,7 +141,7 @@ jobs:
       - name: Compress executable
         uses: svenstaro/upx-action@v2
         with:
-          file: ${{ steps.bin.outputs.path }}
+          files: ${{ steps.bin.outputs.path }}
           args: -9
           strip: false
 
