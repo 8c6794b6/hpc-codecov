@@ -1,6 +1,6 @@
 cabal-version:       2.0
 name:                hpc-codecov
-version:             0.3.0.0
+version:             0.4.0.0
 synopsis:            Generate codecov report from hpc data
 license:             BSD3
 license-file:        LICENSE
@@ -13,8 +13,9 @@ build-type:          Simple
 
 description:
   The hpc-codecov package contains an executable and library codes for
-  generating <https://codecov.io Codeocv> JSON coverage report from
-  @.tix@ and @.mix@ files made with
+  generating <https://codecov.io Codeocv> JSON coverage report or
+  <https://github.com/linux-test-project/lcov LCOV> tracefile report
+  from @.tix@ and @.mix@ files made with
   <https://hackage.haskell.org/package/hpc hpc>.  See the
   <https://github.com/8c6794b6/hpc-codecov#readme README> for
   more info.
@@ -46,6 +47,7 @@ tested-with:           GHC == 8.2.2
                      , GHC == 9.0.2
                      , GHC == 9.2.4
                      , GHC == 9.4.2
+                     , GHC == 9.6.2
 
 library
   hs-source-dirs:      src
