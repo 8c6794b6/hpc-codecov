@@ -56,13 +56,13 @@ import System.Directory            (doesFileExist)
 import System.FilePath             ((<.>), (</>))
 
 -- hpc
-import Trace.Hpc.Mix               (BoxLabel (..), Mix (..), MixEntry,
-                                    readMix)
-import Trace.Hpc.Tix               (Tix (..), TixModule (..), readTix)
+import Trace.Hpc.Mix               (BoxLabel (..), Mix (..), MixEntry)
+import Trace.Hpc.Tix               (Tix (..), TixModule (..))
 import Trace.Hpc.Util              (fromHpcPos)
 
 -- Internal
 import Trace.Hpc.Codecov.Exception
+import Trace.Hpc.Codecov.Parser
 
 
 -- ------------------------------------------------------------------------
@@ -337,7 +337,7 @@ excludeModules rpt = filter exclude
 -- a 'TixNotFound' exception.
 readTixFile :: Report -> FilePath -> IO Tix
 readTixFile rpt path = do
-  mb_tix <- readTix path
+  mb_tix <- {-# SCC "readTixFile.readTix'" #-} readTix' path
   case mb_tix of
     Nothing  -> throwIO (TixNotFound path)
     Just tix -> say rpt ("Found tix file: " ++ path) >> return tix
@@ -350,7 +350,7 @@ readMixFile dirs tm@(TixModule name _h _c _i) = handle handler go
     handler :: ErrorCall -> IO a
     handler _ = throwIO (MixNotFound name dirs')
     dirs' = map (</> (name <.> "mix")) dirs
-    go = readMix dirs (Right tm)
+    go = {-# SCC "readMixFile.readMix'" #-} readMix' dirs (Right tm)
 
 -- | Ensure the given source file exist, return the ensured 'FilePath'
 -- or throw a 'SrcNotFound' exception.

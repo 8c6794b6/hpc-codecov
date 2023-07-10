@@ -52,6 +52,7 @@ library
   exposed-modules:     Trace.Hpc.Codecov.Exception
                        Trace.Hpc.Codecov.Discover
                        Trace.Hpc.Codecov.Main
+                       Trace.Hpc.Codecov.Parser
                        Trace.Hpc.Codecov.Report
   other-modules:       Trace.Hpc.Codecov.Options
                        Paths_hpc_codecov
@@ -63,6 +64,7 @@ library
                      , directory   >= 1.3.0 && < 1.4.0
                      , filepath    >= 1.4.1 && < 1.5
                      , hpc         >= 0.6   && < 0.7
+                     , time        >= 1.8   && < 1.13
   default-language:    Haskell2010
   ghc-options:         -Wall
 
