@@ -77,13 +77,17 @@ jobs:
     - name: Run tests
       run: stack build --fast --test --coverage
 
-    - name: Generate coverage report
+    - name: Generate JSON coverage report
       run: |
         STACK="stack"
         HPCROOT=$($STACK path --local-hpc-root)
         TIX=$(find $HPCROOT -name 'test-main.tix')
         MIX=$($STACK path --dist-dir)/hpc
         $STACK exec -- hpc-codecov --verbose --mix=$MIX -o codecov.json $TIX
+
+    - name: Generate LCOV coverage report
+      run: |
+        stack exec -- hpc-codecov --verbose -flcov -o lcov.info stack:test-main
 
     - name: Upload coverage report
       uses: codecov/codecov-action@v3
