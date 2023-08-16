@@ -65,7 +65,7 @@ library
                      , containers  >= 0.6   && < 0.8
                      , directory   >= 1.3.0 && < 1.4.0
                      , filepath    >= 1.4.1 && < 1.5
-                     , hpc         >= 0.6   && < 0.7
+                     , hpc         >= 0.6   && < 0.8
                      , time        >= 1.8   && < 1.13
   default-language:    Haskell2010
   ghc-options:         -Wall
