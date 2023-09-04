@@ -27,7 +27,7 @@ jobs:
 
     steps:
     - name: Checkout project repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Show stack version
       run: stack --version
@@ -107,7 +107,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Show versions
         run: |
@@ -160,7 +160,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup cabal
         run: cabal update
