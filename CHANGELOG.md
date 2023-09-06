@@ -1,6 +1,10 @@
 # Revision history for hpc-codecov
 
-## 0.4.0.0 -- 2023-07
+## Unreleased
+
+Update package dependency version bound for the ``hpc`` package.
+
+## 0.4.0.0 -- 2023-07-10
 
 Add "--format" option to select the output report format. Add LCOV
 tracefile format for generated report.
@@ -30,7 +34,7 @@ Minor modification to support ghc 9.0.1.
 
 CI configuration update to manage git repository.
 
-## 0.2.0.1 -- 2021-01-2
+## 0.2.0.1 -- 2021-01-02
 
 Minor package dependency updates.
 
