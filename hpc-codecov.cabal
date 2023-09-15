@@ -20,10 +20,11 @@ description:
   <https://github.com/8c6794b6/hpc-codecov#readme README> for
   more info.
 
-extra-source-files:
+extra-doc-files:
   README.md
   CHANGELOG.md
-  --
+
+extra-source-files:
   test/data/reciprocal/reciprocal.hs
   test/data/reciprocal/reciprocal.tix
   test/data/reciprocal/.hpc/Main.mix
