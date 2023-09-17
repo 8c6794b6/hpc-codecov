@@ -1,8 +1,9 @@
 # Revision history for hpc-codecov
 
-## Unreleased
+## 0.4.1.0 -- 2023-09
 
-Update package dependency version bound for the ``hpc`` package.
+- Update package dependency version bound for the ``hpc`` and
+  ``tasty`` packages.
 
 ## 0.4.0.0 -- 2023-07-10
 
