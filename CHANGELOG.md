@@ -1,6 +1,13 @@
 # Revision history for hpc-codecov
 
-## 0.4.1.0 -- 2023-09
+## 0.4.2.0 -- 2023-10-18
+
+- Support ghc 9.8.1.
+
+- Update package dependency version bound for the ``bytestring``
+  package.
+
+## 0.4.1.0 -- 2023-09-17
 
 - Update package dependency version bound for the ``hpc`` and
   ``tasty`` packages.
