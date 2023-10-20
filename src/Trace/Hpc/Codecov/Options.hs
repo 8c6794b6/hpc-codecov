@@ -23,7 +23,7 @@ module Trace.Hpc.Codecov.Options
     -- * Help message and version number
   , printHelp
   , printVersion
-  , versionString
+  , printNumericVersion
   ) where
 
 -- base
@@ -268,6 +268,10 @@ printVersion :: IO ()
 printVersion = do
   me <- getProgName
   putStrLn (me ++ " version " ++ versionString)
+
+-- | Print numeriv version number of this package.
+printNumericVersion :: IO ()
+printNumericVersion = putStrLn versionString
 
 boldUnderline :: Bool -> String -> String
 boldUnderline is_terminal str

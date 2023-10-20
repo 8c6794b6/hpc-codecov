@@ -26,7 +26,7 @@ defaultMain = handle handler (getArgs >>= go)
       case parseOptions args of
         Right opts | optShowHelp opts    -> printHelp
                    | optShowVersion opts -> printVersion
-                   | optShowNumeric opts -> putStrLn versionString
+                   | optShowNumeric opts -> printNumericVersion
                    | otherwise           -> opt2rpt opts >>= genReport
         Left errs -> throwIO (InvalidArgs errs)
 
