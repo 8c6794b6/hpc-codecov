@@ -24,45 +24,58 @@ module Trace.Hpc.Codecov.Report
   ) where
 
 -- base
-import Control.Exception           (ErrorCall, handle, throw, throwIO)
-import Control.Monad               (mplus, when)
-import Control.Monad.ST            (ST)
-import Data.Function               (on)
-import Data.List                   (foldl', intercalate, intersperse)
-import System.IO                   (IOMode (..), hPutStrLn, stderr, stdout,
-                                    withFile)
+import           Control.Exception           (ErrorCall, handle, throw,
+                                              throwIO)
+import           Control.Monad               (mplus, when)
+import           Control.Monad.ST            (ST)
+import           Data.Char                   (isUpper)
+import           Data.Function               (on)
+import           Data.List                   (foldl', intercalate,
+                                              intersperse)
+import           System.IO                   (IOMode (..), hPutStrLn,
+                                              stderr, stdout, withFile)
+import           System.IO.Unsafe            (unsafePerformIO)
+import           Text.Printf                 (printf)
 #if !MIN_VERSION_base(4,11,0)
-import Data.Monoid                 ((<>))
+import           Data.Monoid                 ((<>))
 #endif
 
 -- array
-import Data.Array.Base             (unsafeAt)
-import Data.Array.IArray           (assocs, listArray)
-import Data.Array.MArray           (newArray, readArray, writeArray)
-import Data.Array.ST               (STArray, runSTArray)
-import Data.Array.Unboxed          (UArray)
+import           Data.Array.Base             (unsafeAt)
+import           Data.Array.IArray           (assocs, listArray)
+import           Data.Array.MArray           (newArray, readArray,
+                                              writeArray)
+import           Data.Array.ST               (STArray, runSTArray)
+import           Data.Array.Unboxed          (UArray)
 
 -- bytestring
-import Data.ByteString.Builder     (Builder, char7, hPutBuilder, intDec,
-                                    string7, stringUtf8)
+import           Data.ByteString.Builder     (Builder, char7, hPutBuilder,
+                                              intDec, string7, stringUtf8)
 
 -- containers
-import Data.IntMap                 (insertLookupWithKey)
+import qualified Data.IntMap                 as IntMap
+import qualified Data.Map                    as Map
 
 -- directory
-import System.Directory            (doesFileExist)
+import           System.Directory            (doesFileExist)
 
 -- filepath
-import System.FilePath             ((<.>), (</>))
+import           System.FilePath             (dropExtension,
+                                              splitDirectories,
+                                              takeDirectory, (<.>), (</>))
 
 -- hpc
-import Trace.Hpc.Mix               (BoxLabel (..), Mix (..), MixEntry)
-import Trace.Hpc.Tix               (Tix (..), TixModule (..))
-import Trace.Hpc.Util              (fromHpcPos)
+import           Trace.Hpc.Mix               (BoxLabel (..), Mix (..),
+                                              MixEntry)
+import           Trace.Hpc.Tix               (Tix (..), TixModule (..))
+import           Trace.Hpc.Util              (fromHpcPos)
+
+-- time
+import           Data.Time.Clock.POSIX       (getPOSIXTime)
 
 -- Internal
-import Trace.Hpc.Codecov.Exception
-import Trace.Hpc.Codecov.Parser
+import           Trace.Hpc.Codecov.Exception
+import           Trace.Hpc.Codecov.Parser
 
 
 -- ------------------------------------------------------------------------
@@ -181,6 +194,11 @@ data Format
   -- for detail.
   --
   -- @since 0.4.0.0
+  | Cobertura
+  -- ^ Cobertura XML file format. See the
+  -- <https://cobertura.github.io/cobertura/ Cobertura> website for detail.
+  --
+  -- @since 0.5.0.0
   deriving (Eq, Show)
 
 -- | Generate report data from options.
@@ -213,19 +231,20 @@ emitCoverage fmt mb_outfile entries = wrap emit
     wrap = maybe ($ stdout) (`withFile` WriteMode) mb_outfile
     emit = flip hPutBuilder (builder entries)
     builder = case fmt of
-      Codecov -> buildJSON
-      Lcov    -> buildLcov
+      Codecov   -> buildCodecov
+      Lcov      -> buildLcov
+      Cobertura -> buildCobertura
 
 
 -- ------------------------------------------------------------------------
 --
--- Internal
+-- CoverageEntry to report
 --
 -- ------------------------------------------------------------------------
 
--- | Build simple JSON report from coverage entries.
-buildJSON :: [CoverageEntry] -> Builder
-buildJSON entries = contents
+-- | Build simple Codecov JSON report from coverage entries.
+buildCodecov :: [CoverageEntry] -> Builder
+buildCodecov entries = contents
   where
     contents =
       braced (key (string7 "coverage") <>
@@ -306,6 +325,243 @@ buildLcovEntry e =
 comma :: Builder
 comma = char7 ','
 
+-- Types and typeclass for Cobertura
+
+class HasRate e where
+  lineRate :: e -> String
+  branchRate :: e -> String
+
+toRateString :: Int -> Int -> String
+toRateString n d =
+  if d == 0 then
+    "0.0"
+  else
+    -- Using 'printf' instead of 'show' to avoid scientific notations
+    -- (e.g.; 8.33333e-1)
+    printf "%f" (fromIntegral n / fromIntegral d :: Double)
+
+data CoberturaPackage = CoberturaPackage
+  { cp_name           :: String
+  , cp_lines_valid    :: !Int
+  , cp_lines_covered  :: !Int
+  , cp_branch_valid   :: !Int
+  , cp_branch_covered :: !Int
+  , cp_classes        :: [CoberturaClass]
+  }
+
+instance HasRate CoberturaPackage where
+  lineRate cp = toRateString (cp_lines_covered cp) (cp_lines_valid cp)
+  branchRate cp = toRateString (cp_branch_covered cp) (cp_branch_valid cp)
+
+data CoberturaClass = CoberturaClass
+  { cc_filename       :: String
+  , cc_lines_valid    :: !Int
+  , cc_lines_covered  :: !Int
+  , cc_branch_valid   :: !Int
+  , cc_branch_covered :: !Int
+  , cc_lines          :: [CoberturaLine]
+  , cc_entry          :: CoverageEntry
+  }
+
+instance HasRate CoberturaClass where
+  lineRate cc = toRateString (cc_lines_covered cc) (cc_lines_valid cc)
+  branchRate cc = toRateString (cc_branch_covered cc) (cc_branch_valid cc)
+
+data CoberturaLine = CoberturaLine
+  { cl_line_num    :: !Int
+  , cl_num_hits    :: !Int
+  , cl_branch_hits :: Map.Map (Int, Bool) Int
+  }
+
+-- | Build simple Cobertura XML report from coverage entries.
+buildCobertura :: [CoverageEntry] -> Builder
+buildCobertura es =
+  string7 "<?xml version=\"1.0\" ?>" <>
+  string7 "<!DOCTYPE coverage SYSTEM 'http://cobertura.sourceforge.nex/xml/coverage-0.4.dtd'>" <>
+  xmlTagWith "coverage" coverage_attrs
+  (xmlTag "sources" (xmlTag "source" (char7 '.')) <>
+   xmlTag "packages" (mconcat (map buildCoberturaPackage pkgs))) <>
+  char7 '\n'
+  where
+    coverage_attrs =
+      [("branch-rate", toRateString bc bv)
+      ,("branches-covered", show bc)
+      ,("branches-valid", show bv)
+      ,("complexity", "0")
+      ,("line-rate", toRateString lc lv)
+      ,("lines-covered", show lc)
+      ,("lines-valid", show lv)
+      ,("timestamp", show unsafeGetTimestamp)
+      ,("version", "2.0.3")]
+    pkgs = toCoberturaPackages es
+    (lv, lc, bv, bc) = foldl' f (0,0,0,0) pkgs
+    f (lv0, lc0, bv0, bc0) pkg =
+      ( lv0 + cp_lines_valid pkg
+      , lc0 + cp_lines_covered pkg
+      , bv0 + cp_branch_valid pkg
+      , bc0 + cp_branch_covered pkg
+      )
+
+-- XXX: Not sure whether this is the preferred timestamp format.
+unsafeGetTimestamp :: Integer
+unsafeGetTimestamp = round (unsafePerformIO getPOSIXTime)
+{-# NOINLINE unsafeGetTimestamp #-}
+
+buildCoberturaPackage :: CoberturaPackage -> Builder
+buildCoberturaPackage cp =
+  xmlTagWith "package" package_attrs
+  (xmlTag "classes"
+   (mconcat (map buildCoberturaClass (cp_classes cp))))
+  where
+    package_attrs =
+      [("name", cp_name cp)
+      ,("line-rate", lineRate cp)
+      ,("branch-rate", branchRate cp)
+      ,("complexity", "0")]
+
+buildCoberturaClass :: CoberturaClass -> Builder
+buildCoberturaClass cc =
+  xmlTagWith "class" class_attrs
+  (xmlTag "methods" (mconcat (map method (ce_fns ce))) <>
+   xmlTag "lines" (mconcat (map line (cc_lines cc))))
+  where
+    ce = cc_entry cc
+    class_attrs =
+      [("branch-rate", branchRate cc)
+      ,("complexity", "0")
+      ,("filename", cc_filename cc)
+      ,("line-rate", lineRate cc)
+      ,("name", asModuleName (cc_filename cc))]
+    method (sl, _el, _n, name) =
+      xmlTagWith "method" method_attrs
+      (xmlTag "lines" (line_tag line_attrs))
+      where
+        method_attrs =
+          [("name", name)
+          ,("signature", "")
+          ,("line-rate", "0.0")
+          ,("branch-rate", "0.0")]
+        line_attrs =
+          [("hits", "0")
+          ,("number", show sl)
+          ,("branch", "false")]
+    line cl = line_tag line_attrs
+      where
+        is_branch = not (null (cl_branch_hits cl))
+        line_attrs =
+          [("branch", if is_branch then "true" else "false")
+          ,("hits", show (cl_num_hits cl))
+          ,("number", show (cl_line_num cl)) ] <>
+          [("condition-coverage", toConditionCoverage (cl_branch_hits cl))
+          | is_branch ]
+    line_tag attrs =
+      string7 "<line" <> mconcat (map xmlAttr attrs) <> string7 "/>"
+
+toConditionCoverage :: Map.Map a Int -> String
+toConditionCoverage m = printf "%.0f%% (%d/%d)" (rate * 100) covered valid
+  where
+    rate = fromIntegral covered / fromIntegral valid :: Double
+    (covered, valid) = foldl' f (0, 0) m
+    f :: (Int, Int) -> Int -> (Int, Int)
+    f (c, v) num_hits = (if 0 < num_hits then c + 1 else c, v + 1)
+
+toCoberturaPackages :: [CoverageEntry] -> [CoberturaPackage]
+toCoberturaPackages =
+  map arrange . Map.toList . Map.fromListWith (<>) . map pair_with_pkgname
+  where
+    pair_with_pkgname ce =
+      (toCoberturaPackageName (ce_filename ce), [toCoberturaClass ce])
+    arrange (pkg_name, ces) =
+      let (lv, lc, bv, bc) = foldl' f (0,0,0,0) ces
+          f (lv0,lc0,bv0,bc0) ce =
+            (lv0 + cc_lines_valid ce
+            ,lc0 + cc_lines_covered ce
+            ,bv0 + cc_branch_valid ce
+            ,bc0 + cc_branch_covered ce)
+      in  CoberturaPackage { cp_name = pkg_name
+                           , cp_lines_valid = lv
+                           , cp_lines_covered = lc
+                           , cp_branch_valid = bv
+                           , cp_branch_covered = bc
+                           , cp_classes = ces
+                           }
+
+toCoberturaClass :: CoverageEntry -> CoberturaClass
+toCoberturaClass ce = CoberturaClass
+  { cc_filename = ce_filename ce
+  , cc_lines_valid = lv
+  , cc_lines_covered = lc
+  , cc_branch_valid = bv
+  , cc_branch_covered = bc
+  , cc_lines = lns
+  , cc_entry = ce
+  }
+  where
+    (lv, lc, bv, bc, lns) = summarizeCoberturaLines ce
+
+summarizeCoberturaLines :: CoverageEntry -> (Int, Int, Int, Int, [CoberturaLine])
+summarizeCoberturaLines ce = (lv, lc, bv, bc, IntMap.elems im1)
+  where
+    (lv, lc, im0) = foldl' f0 (0, 0, mempty) (ce_hits ce)
+    (bv, bc, im1) = foldl' f1 (0, 0, im0) (ce_branches ce)
+    f0 (lv0, lc0, im) (n, hit) =
+      case hit of
+        Missed    -> (lv0 + 1, lc0, IntMap.insert n (make_line n 0) im)
+        Partial i -> (lv0 + 1, lc0 + 1, IntMap.insert n (make_line n i) im)
+        Full i    -> (lv0 + 1, lc0 + 1, IntMap.insert n (make_line n i) im)
+    make_line n i = CoberturaLine n i mempty
+    make_branch n i bn bool = CoberturaLine n i (Map.singleton (bn,bool) i)
+    f1 (bv0, bc0, im) (n, bn, bool, count) =
+      let (bv1, bc1) = (bv0 + 1, if count == 0 then bc0 else bc0 + 1)
+          merge_brs new_cl old_cl = CoberturaLine
+            { cl_line_num = cl_line_num old_cl
+            , cl_num_hits = max (cl_num_hits old_cl) (cl_num_hits new_cl)
+            , cl_branch_hits =
+              Map.unionWith (+) (cl_branch_hits old_cl) (cl_branch_hits new_cl)
+            }
+          im' = IntMap.insertWith merge_brs n (make_branch n count bn bool) im
+      in  (bv1, bc1, im')
+
+toCoberturaPackageName :: FilePath -> String
+toCoberturaPackageName = intercalate "." . splitDirectories . takeDirectory
+
+asModuleName :: FilePath -> String
+asModuleName path = intercalate "." paths'
+  where
+    paths' = [p | p@(c:_) <- splitDirectories (dropExtension path), isUpper c ]
+
+xmlTag :: String -> Builder -> Builder
+xmlTag name = xmlTagWith name []
+
+xmlTagWith :: String -> [(String, String)] -> Builder -> Builder
+xmlTagWith name attrs body =
+  char7 '<' <> string7 name <> attrs' <> char7 '>' <>
+  body <>
+  string7 "</" <> string7 name <> char7 '>'
+  where
+    attrs' =
+      if null attrs then mempty else mconcat (map xmlAttr attrs)
+
+xmlAttr :: (String, String) -> Builder
+xmlAttr (name, val) =
+  char7 ' ' <> string7 name <> char7 '=' <>
+  char7 '"' <> string7 (escape val) <> char7 '"'
+  where
+    escape [] = []
+    escape (c:rest) = case c of
+      '>' -> "&gt;" <> escape rest
+      '<' -> "&lt;" <> escape rest
+      '"' -> "&quot;" <> escape rest
+      '&' -> "&amp;" <> escape rest
+      _   -> c:escape rest
+
+
+-- ------------------------------------------------------------------------
+--
+-- Tix to CoverageEntry
+--
+-- ------------------------------------------------------------------------
+
 tixToCoverage :: Report -> Tix -> IO [CoverageEntry]
 tixToCoverage rpt (Tix tms) =
   mapM (tixModuleToCoverage rpt) (excludeModules rpt tms)
@@ -376,7 +632,7 @@ reBranch :: PreBranchHits -> BranchHits
 reBranch = go mempty
   where
     go im0 ((lf,brf,nf) : (lt,brt,nt) : rest) =
-      let (mb_i, im1) = insertLookupWithKey f lf 0 im0
+      let (mb_i, im1) = IntMap.insertLookupWithKey f lf 0 im0
           f _key _new old = old + 1 :: Int
           i = maybe 0 succ mb_i
       in  (lt,i,brt,nt) : (lf,i,brf,nf) : go im1 rest

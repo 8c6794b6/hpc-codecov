@@ -149,7 +149,7 @@ options =
            (ReqArg (\s o -> o {optFormat = s})
                    "FMT")
            "Format of generated report\n\
-           \'codecov' or 'lcov'\n\
+           \'codecov', 'lcov', or 'cobertura'\n\
            \(default: codecov)"
 
   , Option ['v'] ["verbose"]
@@ -215,9 +215,10 @@ parseTarget str = do
 
 parseFormat :: String -> IO Format
 parseFormat fmt = case fmt of
-  "codecov" -> pure Codecov
-  "lcov"    -> pure Lcov
-  _         -> throwIO $ InvalidFormat fmt
+  "codecov"   -> pure Codecov
+  "lcov"      -> pure Lcov
+  "cobertura" -> pure Cobertura
+  _           -> throwIO $ InvalidFormat fmt
 
 uncommas :: String -> [String]
 uncommas = go
