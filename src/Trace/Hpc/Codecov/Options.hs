@@ -32,6 +32,7 @@ import Data.Version                (showVersion)
 import System.Console.GetOpt       (ArgDescr (..), ArgOrder (..),
                                     OptDescr (..), getOpt, usageInfo)
 import System.Environment          (getProgName)
+import System.IO                   (hIsTerminalDevice, stdout)
 
 -- directory
 import System.Directory            (doesFileExist)
@@ -257,36 +258,48 @@ opt2rpt opt = do
 
 -- | Print help messages.
 printHelp :: IO ()
-printHelp = getProgName >>= putStrLn . helpMessage
+printHelp = do
+  me <- getProgName
+  is_terminal <- hIsTerminalDevice stdout
+  putStrLn $ helpMessage is_terminal me
 
 -- | Print version number of this package.
 printVersion :: IO ()
-printVersion =
-  do me <- getProgName
-     putStrLn (me ++ " version " ++ versionString)
+printVersion = do
+  me <- getProgName
+  putStrLn (me ++ " version " ++ versionString)
+
+boldUnderline :: Bool -> String -> String
+boldUnderline is_terminal str
+  | is_terminal = "\ESC[1m\ESC[4m" ++ str ++ "\ESC[0m"
+  | otherwise = str
 
 -- | Help message for command line output.
-helpMessage :: String -- ^ Executable program name.
+helpMessage :: Bool -- ^ 'True' when showing in a terminal.
+            -> String -- ^ Executable program name.
             -> String
-helpMessage name = usageInfo header options ++ footer
+helpMessage is_terminal name = usageInfo header options ++ footer
   where
-    header = "USAGE: " ++ name ++ " [OPTIONS] TARGET\n\
+    bu = boldUnderline is_terminal
+    header = name ++ " - generate report from .tix and .mix files\n\
 \\n\
-\Generate Codecov JSON coverage report for Haskell source codes\n\
-\from .tix and .mix files made with hpc.\n\
+\" ++ bu "USAGE:" ++ "\n\
+\  " ++ name ++ " [OPTIONS] TARGET\n\
 \\n\
-\TARGET is either a path to .tix file or 'TOOL:TEST_SUITE'.\n\
-\Supported TOOL values are 'stack' and 'cabal'. When the TOOL is\n\
-\'stack' and building project with multiple packages, use 'all' as\n\
-\TEST_SUITE value to refer the combined report.\n\
+\" ++ bu "ARGUMENTS:" ++ "\n\
+\  <TARGET>  Either a path to a .tix file or a 'TOOL:TEST_SUITE'.\n\
+\            Supported TOOL values are 'stack' and 'cabal'.\n\
+\            When the TOOL is 'stack' and building a project with\n\
+\            multiple packages, use 'all' as the TEST_SUITE value\n\
+\            to specify the combined report.\n\
 \\n\
-\OPTIONS:\n"
+\" ++ bu "OPTIONS:"
     footer = "\
 \\n\
 \For more info, see:\n\
 \\n\
 \  https://github.com/8c6794b6/hpc-codecov#readme\n\
-\\n"
+\"
 
 -- | String representation of the version number of this package.
 versionString :: String
