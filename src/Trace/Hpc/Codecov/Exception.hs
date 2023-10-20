@@ -10,28 +10,10 @@ module Trace.Hpc.Codecov.Exception
   (
     -- * Exception data type and handler
     HpcCodecovError(..)
-  , withBriefUsageOnError
   ) where
 
 -- base
-import Control.Exception  (Exception (..), handle)
-import System.Environment (getProgName)
-import System.Exit        (exitFailure)
-
--- | Run the given action with a handler for 'HpcCodecovError'.
---
--- The handler will show a brief usage and call 'exitFailure' when an
--- exception was caught.
-withBriefUsageOnError :: IO a   -- ^ Action to perform.
-                      -> IO a
-withBriefUsageOnError = handle handler
-  where
-    handler :: HpcCodecovError -> IO a
-    handler e =
-      do putStr ("Error: " ++ displayException e)
-         name <- getProgName
-         putStrLn ("Run '" ++ name ++ " --help' for usage.")
-         exitFailure
+import Control.Exception (Exception (..))
 
 -- | Exceptions thrown during coverage report generation.
 data HpcCodecovError
