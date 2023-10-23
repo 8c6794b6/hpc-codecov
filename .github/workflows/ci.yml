@@ -159,6 +159,56 @@ jobs:
           name: bins
           path: ${{ steps.bin.outputs.path }}
 
+  static-executable-for-linux:
+    name: Build a static executable for Linux
+    runs-on: ubuntu-latest
+    env:
+      exe: hpc-codecov-Linux-static
+    container:
+      image: fossa/haskell-static-alpine:ghc-9.4.7
+    steps:
+      - name: Show versions
+        run: |
+          ghc --version
+          cabal --version
+
+      - name: Checkout
+        uses: actions/checkout@4
+
+      - name: Update cabal package index
+        run: cabal update
+
+      - name: Run cabal configure
+        run: cabal configure -O2 --enable-executable-static
+
+      - name: Show cabal.project.local
+        run: cat cabal.project.local
+
+      - name: Run cabal build
+        run: cabal build
+
+      - name: Copy the executable
+        run: mkdir ./bin && cp -v $(cabal list-bin hpc-codecov) ./bin/${{ env.exe }}
+
+      - name: Strip the executable
+        run: strip -s ./bin/${{ env.exe }}
+
+      - name: Run readelf
+        run: readelf -d ./bin/${{ env.exe }}
+
+      - name: Compress executable
+        uses: svenstaro/upx-action@v2
+        with:
+          files: ./bin/${{ env.exe }}
+          args: -9
+          strip: false
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: bins
+          path: ./bins/${{ env.exe }}
+
   via-action:
     name: Run hpc-codecov-action
     runs-on: ubuntu-latest
