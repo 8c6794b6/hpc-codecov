@@ -5,6 +5,7 @@ module Test.Main (main) where
 -- base
 import           Control.Exception           (SomeException (..), try)
 import           Control.Monad               (when)
+import           Data.Char                   (toLower)
 import           Data.List                   (isSubsequenceOf)
 import           Data.Maybe                  (fromMaybe, isJust)
 import           System.Environment          (getExecutablePath, lookupEnv,
@@ -130,6 +131,12 @@ recipReport = testGroup "recip"
                     ,"--verbose"
                     ,"--format=lcov"
                     ,"test/data/reciprocal/reciprocal.tix"])
+  , testCase "recip-cobertura-data-to-stdout"
+             (main' ["--mix=test/data/reciprocal/.hpc"
+                    ,"--src=test/data/reciprocal"
+                    ,"--verbose"
+                    ,"--format=cobertura"
+                    ,"test/data/reciprocal/reciprocal.tix"])
   , testCase "recip-data-no-src"
              (shouldFail
                 (main' ["--mix=test/data/reciprocal/.hpc"
@@ -166,6 +173,7 @@ data SRA =
       , sra_mixs     :: [FilePath]
       , sra_excludes :: [String]
       , sra_verbose  :: Bool
+      , sra_format   :: Format
       , sra_out      :: Maybe FilePath
       }
 
@@ -174,6 +182,7 @@ emptySRA = SRA { sra_tix = ""
                , sra_mixs = []
                , sra_excludes = []
                , sra_verbose = False
+               , sra_format = Codecov
                , sra_out = Nothing }
 
 getBuildTool :: IO (Maybe BuildTool)
@@ -256,6 +265,12 @@ selfReport :: IO SRA -> TestTree
 selfReport getArgs = testGroup "self"
   [ testCase "self-data-to-stdout"
              (getArgs >>= sraMain)
+  , testCase "self-data-to-stdout-lcov"
+    (do args <- getArgs
+        sraMain (args {sra_format=Lcov}))
+  , testCase "self-data-to-stdout-cobertura"
+    (do args <- getArgs
+        sraMain (args {sra_format=Cobertura}))
   , testCase "self-data-to-stdout-verbose"
              (do args <- getArgs
                  sraMain (args {sra_verbose=True}))
@@ -307,6 +322,12 @@ discoverStackTest =
           [ "--root=" ++ testData "project1"
           , "--verbose"
           , "--format=lcov"
+          , "stack:project1-test"]
+          []
+        , t "project1"
+          [ "--root=" ++ testData "project1"
+          , "--verbose"
+          , "--format=cobertura"
           , "stack:project1-test"]
           []
 
@@ -430,7 +451,9 @@ sraMain sra = main' args
       map ("--exclude=" ++) (sra_excludes sra) ++
       maybe [] (\p -> ["--out=" ++ p]) (sra_out sra) ++
       ["--verbose" | sra_verbose sra] ++
+      ["--format=" ++ asFormat (sra_format sra)] ++
       [sra_tix sra]
+    asFormat = map toLower . show
 
 -- | Run test with path to temporary file.
 withTempFile :: (IO FilePath -> TestTree) -> TestTree
