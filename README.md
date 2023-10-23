@@ -6,9 +6,10 @@
 [![GitHub](https://img.shields.io/github/actions/workflow/status/8c6794b6/hpc-codecov/ci.yml?branch=master&logo=github)](https://github.com/8c6794b6/hpc-codecov/actions/workflows/ci.yml)
 
 The ``hpc-codecov`` package contains an executable and library codes
-for generating [Codecov](https://codecov.io) JSON coverage report or
-[LCOV](https://github.com/linux-test-project/lcov) tracefile report
-from ``.tix`` and ``.mix`` files made with
+for generating [Codecov](https://codecov.io) JSON coverage report,
+[LCOV](https://github.com/linux-test-project/lcov) tracefile report,
+or [Cobertura](https://cobertura.github.io/cobertura/) XML report from
+``.tix`` and ``.mix`` files made with
 [hpc](https://hackage.haskell.org/package/hpc). The generated report
 is ready to be uploaded to Codecov with other tools such as [Codecov
 uploader](https://docs.codecov.com/docs/codecov-uploader).
@@ -73,7 +74,7 @@ Directory contents look like below:
 ├── my-project.cabal
 ├── src
 │   └── MyLib.hs
-└── tests
+└── test
     └── MyLibTest.hs
 ```
 
@@ -157,6 +158,15 @@ format to ``lcov.info``:
 $ hpc-codecov stack:all -f lcov -o lcov.info
 ```
 
+### Project using stack, with multiple packages, generate Cobertura XML file
+
+Search under directory made by ``stack`` for combined report of
+multiple cabal packages, and write output report in Cobertura XML
+format to ``coverage.xml``:
+
+```consle
+$ hpc-codecov stack:all -f cobertura -o coverage.xml
+```
 
 Low-level examples
 ------------------
@@ -254,3 +264,5 @@ References
 
 - [HPC publication](http://ittc.ku.edu/~andygill/papers/Hpc07.pdf)
 - [Codecov API reference](https://docs.codecov.io/reference)
+- [LCOV](https://github.com/linux-test-project/lcov)
+- [Cobertura](https://cobertura.github.io/cobertura/)

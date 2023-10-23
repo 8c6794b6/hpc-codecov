@@ -1,8 +1,15 @@
 # Revision history for hpc-codecov
 
+## Unreleased
+
+- Add Cobertura XML format for the generated report with
+  "--format=cobertura" option.
+
+- Slightly tidy up the help message.
+
 ## 0.4.2.0 -- 2023-10-18
 
-- Support ghc 9.8.1.
+- Support GHC 9.8.1.
 
 - Update package dependency version bound for the ``bytestring``
   package.
@@ -38,7 +45,7 @@ Rename function ``main`` to ``defaultMain`` in
 
 ## 0.2.0.2 -- 2021-03-25
 
-Minor modification to support ghc 9.0.1.
+Minor modification to support GHC 9.0.1.
 
 CI configuration update to manage git repository.
 
