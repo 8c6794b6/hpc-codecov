@@ -207,7 +207,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: bins
-          path: ./bins/${{ env.exe }}
+          path: bin/${{ env.exe }}
 
   via-action:
     name: Run hpc-codecov-action
