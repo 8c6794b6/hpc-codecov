@@ -173,7 +173,7 @@ jobs:
           cabal --version
 
       - name: Checkout
-        uses: actions/checkout@4
+        uses: actions/checkout@v4
 
       - name: Update cabal package index
         run: cabal update
