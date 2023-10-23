@@ -89,6 +89,10 @@ jobs:
       run: |
         stack exec -- hpc-codecov --verbose -flcov -o lcov.info stack:test-main
 
+    - name: Generate Cobertura coverage report
+      run: |
+        stack exec -- hpc-codecov --verbose -fcobertura -o coverage.xml stack:test-main
+
     - name: Upload coverage report
       uses: codecov/codecov-action@v3
       with:
