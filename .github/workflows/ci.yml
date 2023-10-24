@@ -233,7 +233,7 @@ jobs:
       - name: Show contents of current directory
         run: ls -lh
 
-      - name: Build a container image
+      - name: Build and push a container image
         uses: macbre/push-to-ghcr@master
         with:
           image_name: ${{ github.repository }}
@@ -291,6 +291,7 @@ jobs:
           body: ''
           files: |
             bin/hpc-codecov-Linux
+            bin/hpc-codecov-Linux-static
             bin/hpc-codecov-Windows.exe
             bin/hpc-codecov-macOS
         env:
