@@ -54,7 +54,7 @@ binary executables are available
 QuickStart
 ----------
 
-To illustrate an example, initializing sample project named
+To illustrate an example, initializing a sample project named
 ``my-project`` with ``cabal-install``:
 
 ```console
@@ -64,7 +64,7 @@ compiled using version 3.4.0.0 of the Cabal library
 $ cabal init --simple --tests --test-dir=test -p my-project
 ```
 
-Directory contents look like below:
+The directory contents look like below:
 
 ```console
 .
@@ -119,8 +119,8 @@ $ hpc-codecov --help
 
 ### Project using cabal-install
 
-Search under directory made by ``cabal-install`` , generating a report
-for test suite named ``my-project-test``. Skip searching under the
+Search under the directory made by ``cabal-install``, generating a report
+for a test suite named ``my-project-test``. Skip searching under the
 directories with base name ``my-project``, and exclude modules named
 ``Main`` and ``Paths_my_project`` from the report. Note the use of
 comma to separate multiple values for the ``-x`` option:
@@ -131,7 +131,7 @@ $ hpc-codecov -X my-project -x Main,Paths_my_project cabal:my-project-test
 
 ### Project using stack
 
-Search under directory made by ``stack`` for test suite named
+Search under the directory made by ``stack`` for a test suite named
 ``my-project-test``, show verbose information, and write output to
 ``codecov.json``:
 
@@ -141,7 +141,7 @@ $ hpc-codecov --verbose -o codecov.json stack:my-project-test
 
 ### Project using stack, with multiple packages
 
-Search under directory made by ``stack`` for combined report of
+Search under the directory made by ``stack`` for a combined report of
 multiple cabal packages, and write output to ``codecov.json``:
 
 ```consle
@@ -150,8 +150,8 @@ $ hpc-codecov stack:all -o codecov.json
 
 ### Project using stack, with multiple packages, generate LCOV tracefile
 
-Search under directory made by ``stack`` for combined report of
-multiple cabal packages, and write output report in LCOV tracefile
+Search under the directory made by ``stack`` for a combined report of
+multiple cabal packages, and write the output report in LCOV tracefile
 format to ``lcov.info``:
 
 ```consle
@@ -160,12 +160,21 @@ $ hpc-codecov stack:all -f lcov -o lcov.info
 
 ### Project using stack, with multiple packages, generate Cobertura XML file
 
-Search under directory made by ``stack`` for combined report of
+Search under the directory made by ``stack`` for a combined report of
 multiple cabal packages, and write output report in Cobertura XML
 format to ``coverage.xml``:
 
 ```consle
 $ hpc-codecov stack:all -f cobertura -o coverage.xml
+```
+
+### Project using stack, running via Docker
+
+Search under the directory made by ``stack`` for a combined report of
+multiple cabal packages, running via Docker:
+
+```
+$ docker run --rm -v $PWD:$PWD ghcr.io/8c6794b6/hpc-codecov /hpc-codecov -r $PWD stack:all
 ```
 
 Low-level examples
@@ -178,7 +187,7 @@ Nix-style local build commands, and another with ``stack``.
 
 ### With cabal-install
 
-First, run the tests with coverage option to generate ``.tix`` and
+First, run the tests with the coverage option to generate ``.tix`` and
 ``mix`` files:
 
 ```console
@@ -239,7 +248,7 @@ ${CODECOV_TOKEN}` option).
 
 ### With stack
 
-Build the package and run the tests with coverage option:
+Build the package and run the tests with the coverage option:
 
 ```console
 $ stack --numeric-version
@@ -248,7 +257,7 @@ $ stack build --test --coverage
 ```
 
 As done in ``cabal-install`` example, specify the path of ``.tix`` and
-``.mix`` files. Using ``path`` sub-command to get the local hpc root
+``.mix`` files. Using the ``path`` sub-command to get the local hpc root
 directory and dist directory:
 
 ```console
