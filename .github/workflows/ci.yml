@@ -203,6 +203,12 @@ jobs:
           args: -9
           strip: false
 
+      - name: Build a container image
+        uses: macbre/push-to-ghcr@master
+        with:
+          image_name: ${{ github.repository }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
