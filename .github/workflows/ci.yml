@@ -216,7 +216,7 @@ jobs:
       - static-executable-for-linux
     steps:
       - name: Show docker version
-        runs: docker --version
+        run: docker --version
 
       - name: Download artifacts
         uses: actions/download-artifact@v3
