@@ -227,6 +227,9 @@ jobs:
           name: bins
           path: ./
 
+      - name: Change mode
+        run: chmod +x hpc-codecov-Linux-static
+
       - name: Show contents of current directory
         run: ls -lh
 
