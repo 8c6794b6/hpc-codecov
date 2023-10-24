@@ -203,17 +203,35 @@ jobs:
           args: -9
           strip: false
 
-      - name: Build a container image
-        uses: macbre/push-to-ghcr@master
-        with:
-          image_name: ${{ github.repository }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: bins
           path: bin/${{ env.exe }}
+
+  container-image:
+    name: Build and push a container image
+    runs-on: ubuntu-latest
+    needs:
+      - static-executable-for-linux
+    steps:
+      - name: Show docker version
+        runs: docker --version
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: bins
+          path: ./
+
+      - name: Show contents of current directory
+        run: ls -lh
+
+      - name: Build a container image
+        uses: macbre/push-to-ghcr@master
+        with:
+          image_name: ${{ github.repository }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
   via-action:
     name: Run hpc-codecov-action
