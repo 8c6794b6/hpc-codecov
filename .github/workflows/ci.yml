@@ -234,6 +234,7 @@ jobs:
         run: ls -lh
 
       - name: Build and push a container image
+        if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         uses: macbre/push-to-ghcr@master
         with:
           image_name: ${{ github.repository }}
