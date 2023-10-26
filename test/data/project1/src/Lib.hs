@@ -1,7 +1,13 @@
 module Lib
     ( someFunc
     , anotherFunc
+    , yetAnotherFunc
+    , theNewFunc
+    , theReturnedFunc
     ) where
+
+import Lib.Bar
+import Lib.Foo
 
 someFunc :: Int -> IO ()
 someFunc n =

@@ -307,29 +307,40 @@ discoverStackTest =
       withProject name act = case getAcquireAndRelease Stack name [] of
         (a,r) -> withResource a r (const act)
   in  testGroup "discover_stack"
-        [ t "project1"
-          [ "--root=" ++ testData "project1"
-          , "--verbose"
-          , "stack:project1-test"]
-          []
-        , t "project1"
-          [ "--root=" ++ testData "project1"
-          , "--verbose"
-          , "--build=dot-stack-work"
-          , "stack:project1-test.tix"]
-          ["--work-dir=dot-stack-work"]
-        , t "project1"
-          [ "--root=" ++ testData "project1"
-          , "--verbose"
-          , "--format=lcov"
-          , "stack:project1-test"]
-          []
-        , t "project1"
-          [ "--root=" ++ testData "project1"
-          , "--verbose"
-          , "--format=cobertura"
-          , "stack:project1-test"]
-          []
+        [ testGroup "plain"
+          [ t "project1"
+            [ "--root=" ++ testData "project1"
+            , "--verbose"
+            , "stack:project1-test"]
+            []
+          ]
+
+        , testGroup "dot-stack-work"
+          [ t "project1"
+            [ "--root=" ++ testData "project1"
+            , "--verbose"
+            , "--build=dot-stack-work"
+            , "stack:project1-test.tix"]
+            ["--work-dir=dot-stack-work"]
+          ]
+
+        , testGroup "lcov"
+          [ t "project1"
+            [ "--root=" ++ testData "project1"
+            , "--verbose"
+            , "--format=lcov"
+            , "stack:project1-test"]
+            []
+          ]
+
+        , testGroup "cobertura"
+          [ t "project1"
+            [ "--root=" ++ testData "project1"
+            , "--verbose"
+            , "--format=cobertura"
+            , "stack:project1-test"]
+            []
+          ]
 
         , withProject "project1" $
             testCase "project1" $
