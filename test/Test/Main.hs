@@ -6,12 +6,15 @@ module Test.Main (main) where
 import           Control.Exception           (SomeException (..), try)
 import           Control.Monad               (when)
 import           Data.Char                   (toLower)
-import           Data.List                   (isSubsequenceOf)
+import           Data.List                   (isPrefixOf, isSubsequenceOf)
 import           Data.Maybe                  (fromMaybe, isJust)
 import           System.Environment          (getExecutablePath, lookupEnv,
                                               setEnv, unsetEnv, withArgs)
 import           System.Exit                 (ExitCode)
-import           System.IO                   (hClose, openTempFile)
+import           System.IO                   (IOMode (..), hClose,
+                                              hGetContents',
+                                              openBinaryFile, openTempFile)
+import           System.Info                 (os)
 
 #if !MIN_VERSION_base(4,11,0)
 import           Data.Monoid                 ((<>))
@@ -19,7 +22,8 @@ import           Data.Monoid                 ((<>))
 
 
 -- filepath
-import           System.FilePath             (takeFileName, (</>))
+import           System.FilePath             (joinPath, takeFileName,
+                                              (</>))
 
 -- directory
 import           System.Directory            (canonicalizePath,
@@ -36,10 +40,15 @@ import           System.Process              (CreateProcess (..),
                                               withCreateProcess)
 
 -- tasty
-import           Test.Tasty                  (TestTree, defaultMain,
+import           Test.Tasty                  (DependencyType (..),
+                                              TestTree, after, defaultMain,
                                               testGroup, withResource)
 import           Test.Tasty.HUnit            (assertEqual, assertFailure,
                                               testCase)
+
+-- tasty-golden
+import           Test.Tasty.Golden           (goldenVsFile,
+                                              writeBinaryFile)
 
 -- Internal
 import           Trace.Hpc.Codecov.Discover
@@ -338,8 +347,22 @@ discoverStackTest =
             [ "--root=" ++ testData "project1"
             , "--verbose"
             , "--format=cobertura"
+            , "--out=project1.xml"
             , "stack:project1-test"]
             []
+          ]
+
+        , after AllSucceed "cobertura.project1" $
+          testGroup "golden"
+          [ let ofile = "project1-refilled.xml"
+                golden_file =
+                  if os == "mingw32" then
+                    "project1-windows.xml.golden"
+                  else
+                    "project1.xml.golden"
+                golden_path = joinPath ["test", "data", "golden", golden_file]
+                act = refillTimestampWithZero "project1.xml" ofile
+            in  goldenVsFile "cobertura" golden_path ofile act
           ]
 
         , withProject "project1" $
@@ -360,6 +383,17 @@ discoverStackTest =
                    "canonical_tix_path: " ++ canonical_tix_path
                  main' [ "--verbose", "stack:" ++ canonical_tix_path ])
         ]
+
+refillTimestampWithZero :: FilePath -> FilePath -> IO ()
+refillTimestampWithZero ipath opath = do
+  hdl <- openBinaryFile ipath ReadMode
+  contents <- hGetContents' hdl
+  writeBinaryFile opath $
+    unwords [ w' | w <- words contents
+                  , let w' =
+                          if "timestamp" `isPrefixOf` w
+                          then "timestamp=\"0\""
+                          else w ]
 
 discoverCabalTest :: TestTree
 discoverCabalTest =
@@ -473,7 +507,7 @@ withTempFile = withResource acquire release
     acquire = do (path,hdl) <- openTempFile "." "test.tmp"
                  hClose hdl
                  return path
-    release path = removeFile path
+    release = removeFile
 
 withTempDir :: (IO FilePath -> TestTree) -> TestTree
 withTempDir = withResource acquire release

@@ -91,9 +91,10 @@ test-suite test-main
                      , filepath
                      , hpc-codecov
                        --
-                     , process     >= 1.6   && < 1.7
-                     , tasty       >= 1.4   && < 1.6
-                     , tasty-hunit >= 0.8   && < 1.0
+                     , process      >= 1.6   && < 1.7
+                     , tasty        >= 1.4   && < 1.6
+                     , tasty-golden >= 2.3   && < 2.5
+                     , tasty-hunit  >= 0.8   && < 1.0
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded -rtsopts
 
