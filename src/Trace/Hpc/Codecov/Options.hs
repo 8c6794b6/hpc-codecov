@@ -278,17 +278,22 @@ boldUnderline is_terminal str
   | is_terminal = "\ESC[1m\ESC[4m" ++ str ++ "\ESC[0m"
   | otherwise = str
 
+bold :: Bool -> String -> String
+bold is_terminal str
+  | is_terminal = "\ESC[1m" ++ str ++ "\ESC[0m"
+  | otherwise = str
+
 -- | Help message for command line output.
 helpMessage :: Bool -- ^ 'True' when showing in a terminal.
             -> String -- ^ Executable program name.
             -> String
 helpMessage is_terminal name = usageInfo header options ++ footer
   where
+    b = bold is_terminal
     bu = boldUnderline is_terminal
-    header = name ++ " - generate report from .tix and .mix files\n\
+    header = "A tool to generate reports from .tix and .mix files\n\
 \\n\
-\" ++ bu "USAGE:" ++ "\n\
-\  " ++ name ++ " [OPTIONS] TARGET\n\
+\" ++ bu "USAGE:" ++ " " ++ b name ++ " [OPTIONS] TARGET\n\
 \\n\
 \" ++ bu "ARGUMENTS:" ++ "\n\
 \  <TARGET>  Either a path to a .tix file or a 'TOOL:TEST_SUITE'.\n\
