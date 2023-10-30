@@ -37,6 +37,9 @@ extra-source-files:
   test/data/project1/app/Main.hs
   test/data/project1/package.yaml
   test/data/project1/src/Lib.hs
+  test/data/project1/src/Lib/Foo.hs
+  test/data/project1/src/Lib/Bar.hs
+  test/data/project1/src/Lib/Bar/Buzz.hs
   test/data/project1/test/Spec.hs
   test/data/project1/project1.cabal
   test/data/project1/stack.yaml
