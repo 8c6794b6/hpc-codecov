@@ -8,7 +8,7 @@
 
 module Trace.Hpc.Codecov.Exception
   (
-    -- * Exception data type and handler
+    -- * Exception data type
     HpcCodecovError(..)
   ) where
 
