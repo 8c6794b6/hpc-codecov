@@ -1,7 +1,7 @@
 cabal-version:       2.0
 name:                hpc-codecov
 version:             0.4.2.0
-synopsis:            Generate report from hpc data
+synopsis:            Generate reports from hpc data
 license:             BSD3
 license-file:        LICENSE
 author:              8c6794b6
@@ -94,12 +94,13 @@ test-suite test-main
   build-depends:       base
                      , directory
                      , filepath
+                     , hpc
                      , hpc-codecov
                        --
-                     , process      >= 1.6   && < 1.7
-                     , tasty        >= 1.4   && < 1.6
-                     , tasty-golden >= 2.3   && < 2.5
-                     , tasty-hunit  >= 0.8   && < 1.0
+                     , process      >= 1.6 && < 1.7
+                     , tasty        >= 1.4 && < 1.6
+                     , tasty-golden >= 2.3 && < 2.5
+                     , tasty-hunit  >= 0.8 && < 1.0
   default-language:    Haskell2010
   ghc-options:         -Wall -threaded -rtsopts
 

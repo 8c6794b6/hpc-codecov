@@ -16,29 +16,28 @@ module Trace.Hpc.Codecov.Parser
   ) where
 
 -- base
-import           Control.Applicative            (Alternative (..))
-import           Data.Functor                   (($>))
-import           Prelude                        hiding (takeWhile)
+import           Control.Applicative   (Alternative (..))
+import           Data.Functor          (($>))
+import           Prelude               hiding (takeWhile)
 
 -- bytestring
-import           Data.ByteString.Char8          (ByteString)
-import qualified Data.ByteString.Char8          as BS
+import           Data.ByteString.Char8 (ByteString)
+import qualified Data.ByteString.Char8 as BS
 
 -- filepath
-import           System.FilePath                ((<.>), (</>))
+import           System.FilePath       ((<.>), (</>))
 
 -- hpc
-import           Trace.Hpc.Mix                  (BoxLabel (..),
-                                                 CondBox (..), Mix (..),
-                                                 MixEntry)
-import           Trace.Hpc.Tix                  (Tix (..), TixModule (..),
-                                                 tixModuleName)
-import           Trace.Hpc.Util                 (HpcHash (..), HpcPos,
-                                                 catchIO, toHpcPos)
+import           Trace.Hpc.Mix         (BoxLabel (..), CondBox (..),
+                                        Mix (..), MixEntry)
+import           Trace.Hpc.Tix         (Tix (..), TixModule (..),
+                                        tixModuleName)
+import           Trace.Hpc.Util        (HpcHash (..), HpcPos, catchIO,
+                                        toHpcPos)
 
 -- time
-import           Data.Time.Calendar.OrdinalDate (fromOrdinalDate)
-import           Data.Time.Clock                (UTCTime (..))
+import           Data.Time.Clock       (UTCTime (..))
+import           Data.Time.Format      (defaultTimeLocale, parseTimeM)
 
 
 -- ------------------------------------------------------------------------
@@ -57,9 +56,6 @@ readTix' path =
 --
 -- This function is similar to 'Trace.Hpc.Mix.readMix', but internally
 -- uses 'ByteString' to improve performance.
---
--- __NOTE__: At the moment, the 'UTCTime' field in the parsed 'Mix' is
--- constantly filled with dummy value, to avoid parsing date time.
 readMix'
   :: [String] -- ^ Dir names
   -> Either String TixModule -- ^ module wanted
@@ -114,6 +110,10 @@ runEitherP p = runP p Left (\a _ -> Right a)
 
 runMaybeP :: P a -> ByteString -> Maybe a
 runMaybeP p = runP p (const Nothing) (\a _ -> Just a)
+
+failP :: String -> P a
+failP msg = P (\err _ _ -> err msg)
+{-# INLINABLE failP #-}
 
 char :: Char -> P ()
 char c =
@@ -218,13 +218,21 @@ parseMix :: P Mix
 parseMix = do
   bytes "Mix" *> spaces
   path <- string <* spaces
-  _year <- takeWhile (/= ' ') <* spaces
-  _time <- takeWhile (/= ' ') <* spaces
-  _zone <- takeWhile (/= ' ') <* spaces
+  ts <- timestamp
   hash <- fmap toHash int <* spaces
   tabstop <- int <* spaces
-  let dummy_date = UTCTime (fromOrdinalDate 1900 1) 0
-  Mix path dummy_date hash tabstop <$> mixEntries
+  Mix path ts hash tabstop <$> mixEntries
+
+timestamp :: P UTCTime
+timestamp = do
+  yyyy_mm_dd <- takeWhile (/= ' ') <* spaces
+  hh_mm_ss_ps <- takeWhile (/= ' ') <* spaces
+  _tz <- bytes "UTC" <* spaces
+  let utc_str = BS.unpack (mconcat [yyyy_mm_dd, BS.pack " ", hh_mm_ss_ps])
+  case parseTimeM True defaultTimeLocale "%F %T%Q" utc_str of
+    Just utc_time -> pure utc_time
+    Nothing       -> failP "timestamp: failed to parse UTC time"
+{-# INLINABLE timestamp #-}
 
 mixEntries :: P [MixEntry]
 mixEntries = bracketed (sepBy mixEntry comma)

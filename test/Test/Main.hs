@@ -33,6 +33,10 @@ import           System.Directory            (canonicalizePath,
                                               removeFile,
                                               withCurrentDirectory)
 
+-- hpc
+import           Trace.Hpc.Mix               (readMix)
+import           Trace.Hpc.Tix               (readTix)
+
 -- process
 import           System.Process              (CreateProcess (..),
                                               callProcess, shell,
@@ -54,6 +58,7 @@ import           Test.Tasty.Golden           (goldenVsFile,
 import           Trace.Hpc.Codecov.Discover
 import           Trace.Hpc.Codecov.Exception
 import qualified Trace.Hpc.Codecov.Main      as HpcCodecov
+import           Trace.Hpc.Codecov.Parser
 import           Trace.Hpc.Codecov.Report
 
 
@@ -76,10 +81,34 @@ main = do
     , "" ]
 
   defaultMain $ testGroup "main" $
-    [reportTest, cmdline, recipReport, exceptionTest] ++
+    [reportTest, cmdline, recipReport, exceptionTest, parserTest] ++
     [selfReportTest | not test_in_test, isJust mb_tool] ++
     [discoverStackTest | not test_in_test, mb_tool == Just Stack] ++
     [discoverCabalTest | not test_in_test, mb_tool == Just Cabal]
+
+parserTest :: TestTree
+parserTest = testGroup "parser"
+  [ testGroup "readTix'"
+    [ testCase "compare" $ do
+        let read_with f = f (reciprocal_dir </> "reciprocal.tix")
+        tix1 <- read_with readTix
+        tix2 <- read_with readTix'
+        assertEqual "readTix'" tix1 tix2
+    ]
+
+  , testGroup "readMix'"
+    [ testCase "compare" $ do
+        let read_with f = f [reciprocal_dir </> ".hpc"] (Left "Main")
+        mix1 <- read_with readMix
+        mix2 <- read_with readMix'
+        assertEqual "readMix'" mix1 mix2
+
+    , testCase "malformed timestamp" $
+        shouldFail $ readMix' [reciprocal_dir </> ".hpc"] (Left "Malformed")
+    ]
+  ]
+  where
+    reciprocal_dir = joinPath ["test", "data", "reciprocal"]
 
 exceptionTest :: TestTree
 exceptionTest = testGroup "exception"

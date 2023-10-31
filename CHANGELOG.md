@@ -5,6 +5,9 @@
 - Add Cobertura XML format for the generated report with
   "--format=cobertura" option.
 
+- Modify "readMix'" to fill in the field of Mix values with the
+  timestamp in a .mix file instead of a dummy value.
+
 - Slightly tidy up the help message.
 
 ## 0.4.2.0 -- 2023-10-18
