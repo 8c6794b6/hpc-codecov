@@ -63,6 +63,8 @@ library
                        Trace.Hpc.Codecov.Parser
                        Trace.Hpc.Codecov.Report
   other-modules:       Trace.Hpc.Codecov.Options
+                       Trace.Hpc.Codecov.Report.Emit
+                       Trace.Hpc.Codecov.Report.Entry
                        Paths_hpc_codecov
   autogen-modules:     Paths_hpc_codecov
   build-depends:       base        >= 4.10  && < 5
