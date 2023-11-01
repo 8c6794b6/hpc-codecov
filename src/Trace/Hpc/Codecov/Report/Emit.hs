@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 -- |
@@ -20,11 +21,17 @@ import           Data.List                         (foldl', intercalate,
                                                     intersperse)
 import           System.IO.Unsafe                  (unsafePerformIO)
 
+#if !MIN_VERSION_bytestring(0,11,0)
+import           Text.Printf                       (printf)
+#endif
+
 -- bytestring
 import           Data.ByteString.Builder           (Builder, char7, intDec,
                                                     string7, stringUtf8)
+#if MIN_VERSION_bytestring(0,11,0)
 import           Data.ByteString.Builder.RealFloat (formatDouble,
                                                     standardDefaultPrecision)
+#endif
 
 -- containers
 import qualified Data.IntMap                       as IntMap
@@ -409,5 +416,9 @@ comma = char7 ','
 {-# INLINABLE comma #-}
 
 formatStandardDouble :: Double -> Builder
+#if MIN_VERSION_bytestring(0,11,0)
 formatStandardDouble = formatDouble standardDefaultPrecision
+#else
+formatStandardDouble = string7 . printf "%f"
+#endif
 {-# INLINABLE formatStandardDouble #-}
