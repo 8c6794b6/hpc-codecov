@@ -8,6 +8,8 @@
 - Modify "readMix'" to fill in the field of Mix values with the
   timestamp in a .mix file instead of a dummy value.
 
+- Drop support for GHC < 8.10.
+
 - Slightly tidy up the help message.
 
 ## 0.4.2.0 -- 2023-10-18
