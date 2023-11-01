@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 -- |
 -- Module:     Trace.Hpc.Codecov.Report.Entry
 -- Copyright:  (c) 2023 8c6794b6
@@ -28,10 +27,6 @@ import           Control.Monad.ST            (ST)
 import           Data.Function               (on)
 import           Data.List                   (foldl', intercalate)
 import           System.IO                   (hPutStrLn, stderr)
-
-#if !MIN_VERSION_base(4,11,0)
-import           Data.Monoid                 ((<>))
-#endif
 
 -- array
 import           Data.Array.Base             (unsafeAt)
@@ -89,16 +84,11 @@ data Report = Report
    -- @since 0.4.0.0
  } deriving (Eq, Show)
 
-#if MIN_VERSION_base(4,11,0)
 instance Semigroup Report where
   (<>) = mappendReport
-#endif
 
 instance Monoid Report where
   mempty = emptyReport
-#if !MIN_VERSION_base(4,16,0)
-  mappend = mappendReport
-#endif
 
 emptyReport :: Report
 emptyReport = Report
