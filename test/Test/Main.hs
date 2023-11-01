@@ -12,8 +12,8 @@ import           System.Environment          (getExecutablePath, lookupEnv,
                                               setEnv, unsetEnv, withArgs)
 import           System.Exit                 (ExitCode)
 import           System.IO                   (IOMode (..), hClose,
-                                              hGetContents',
-                                              openBinaryFile, openTempFile)
+                                              hGetContents, openBinaryFile,
+                                              openTempFile)
 import           System.Info                 (os)
 
 #if !MIN_VERSION_base(4,11,0)
@@ -416,13 +416,13 @@ discoverStackTest =
 refillTimestampWithZero :: FilePath -> FilePath -> IO ()
 refillTimestampWithZero ipath opath = do
   hdl <- openBinaryFile ipath ReadMode
-  contents <- hGetContents' hdl
+  contents <- hGetContents hdl
   writeBinaryFile opath $
     unwords [ w' | w <- words contents
-                  , let w' =
-                          if "timestamp" `isPrefixOf` w
-                          then "timestamp=\"0\""
-                          else w ]
+                 , let w' =
+                         if "timestamp" `isPrefixOf` w
+                         then "timestamp=\"0\""
+                         else w ]
 
 discoverCabalTest :: TestTree
 discoverCabalTest =
