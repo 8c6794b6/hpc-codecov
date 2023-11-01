@@ -1,6 +1,6 @@
 # Revision history for hpc-codecov
 
-## Unreleased
+## 0.5.0.0 -- 2023-11-01
 
 - Add Cobertura XML format for the generated report with
   "--format=cobertura" option.
