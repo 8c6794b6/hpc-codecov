@@ -174,7 +174,7 @@ Search under the directory made by ``stack`` for a combined report of
 multiple cabal packages, running via Docker:
 
 ```
-$ docker run --rm -v $PWD:$PWD ghcr.io/8c6794b6/hpc-codecov /hpc-codecov -r $PWD stack:all
+$ docker run --rm -v $PWD:$PWD ghcr.io/8c6794b6/hpc-codecov hpc-codecov -r $PWD stack:all
 ```
 
 Low-level examples

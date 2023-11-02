@@ -1,3 +1,2 @@
-FROM scratch
-COPY hpc-codecov-Linux-static /hpc-codecov
-CMD ["/hpc-codecov"]
+FROM busybox:musl
+COPY hpc-codecov-Linux-static /bin/hpc-codecov
