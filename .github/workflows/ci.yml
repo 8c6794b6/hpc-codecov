@@ -154,7 +154,7 @@ jobs:
           strip: false
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bins
           path: ${{ steps.bin.outputs.path }}
@@ -204,7 +204,7 @@ jobs:
           strip: false
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bins
           path: bin/${{ env.exe }}
