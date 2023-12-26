@@ -126,9 +126,13 @@ jobs:
         id: extension
         run: echo "exe=.exe" >> $GITHUB_OUTPUT
 
-      - name: Set executable
+      - name: Set executable name
+        id: exename
+        run: echo "exename=hpc-codecov-${{ runner.os }}${{ steps.extension.outputs.exe }}" >> $GITHUB_OUTPUT
+
+      - name: Set executable path
         id: bin
-        run: echo "path=bin/hpc-codecov-${{ runner.os }}${{ steps.extension.outputs.exe }}" >> $GITHUB_OUTPUT
+        run: echo "path=bin/${{ steps.exename.outputs.exename }}" >> $GITHUB_OUTPUT
 
       - name: Create bin directory
         run: mkdir ./bin/
@@ -154,9 +158,9 @@ jobs:
           strip: false
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: bins
+          name: ${{ steps.exename.outputs.exename }}
           path: ${{ steps.bin.outputs.path }}
 
   static-executable-for-linux:
@@ -204,9 +208,9 @@ jobs:
           strip: false
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: bins
+          name: ${{ env.exe }}
           path: bin/${{ env.exe }}
 
   container-image:
@@ -222,9 +226,9 @@ jobs:
         run: docker --version
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: bins
+          name: hpc-codecov-Linux-static
           path: ./
 
       - name: Change mode
@@ -274,10 +278,11 @@ jobs:
 
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: bins
           path: bin
+          pattern: hpc-codecov*
+          merge-multiple: true
 
       - name: Show contents of the bin directory
         run: ls -lh bin
