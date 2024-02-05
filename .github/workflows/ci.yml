@@ -94,7 +94,7 @@ jobs:
         stack exec -- hpc-codecov --verbose -fcobertura -o coverage.xml stack:test-main
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         name: gh-stack-${{ matrix.os }}
 
@@ -264,7 +264,7 @@ jobs:
           excludes: Main,Test.Main,Paths_hpc_codecov
 
       - name: Send coverage report
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           name: hpc-codecov-action
 
