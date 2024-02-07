@@ -97,6 +97,7 @@ jobs:
       uses: codecov/codecov-action@v4
       with:
         name: gh-stack-${{ matrix.os }}
+        token: ${{ secrets.CODECOV_TOKEN }}
 
   cabal-install:
     strategy:
@@ -267,6 +268,7 @@ jobs:
         uses: codecov/codecov-action@v4
         with:
           name: hpc-codecov-action
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   release:
     name: Release on new tag
