@@ -21,6 +21,7 @@ stack.yaml.lock
 .hpc
 a.out
 codecov.json
+lcov.info
 hpc-codecov.tix
 tmp/
 .hpc_codecov_test_tmp*
