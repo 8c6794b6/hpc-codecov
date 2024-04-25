@@ -46,36 +46,46 @@ import Trace.Hpc.Codecov.Report
 
 -- | Options for generating test coverage report.
 data Options = Options
-  { optTix         :: FilePath
+  { optTix          :: FilePath
     -- ^ Input tix file.
-  , optMixDirs     :: [FilePath]
+  , optMixDirs      :: [FilePath]
     -- ^ Directory containing mix files referred by the tix file.
-  , optSrcDirs     :: [FilePath]
+  , optSrcDirs      :: [FilePath]
     -- ^ Directory containing source codes referred by the mix files.
-  , optExcludes    :: [String]
+  , optExcludes     :: [String]
     -- ^ Module name strings to exclude from coverage report.
-  , optOutFile     :: Maybe FilePath
+  , optOutFile      :: Maybe FilePath
     -- ^ Output file to write JSON report, if given.
 
-  , optFormat      :: String
+  , optFormat       :: String
     -- ^ Format of generated report.
 
-  , optVerbose     :: Bool
+  , optVerbose      :: Bool
     -- ^ Flag for showing verbose message during coverage report
     -- generation.
 
-  , optRootDir     :: FilePath
+  , optRootDir      :: FilePath
     -- ^ Project root directory for the build tool.
-  , optBuildDir    :: Maybe FilePath
+  , optBuildDir     :: Maybe FilePath
     -- ^ Name of the build directory used by the build tool
-  , optSkipDirs    :: [String]
+  , optSkipDirs     :: [String]
     -- ^ Directories to ignore while discovering.
 
-  , optShowVersion :: Bool
+  , optExprOnly     :: Bool
+    -- ^ Flag for conting 'ExpBox' entries only.
+    --
+    -- @since 0.6.0.0
+  , optIgnoreDittos :: Bool
+    -- ^ Flag for ignoring repeated entries with the same source code
+    -- positions.
+    --
+    -- @since 0.6.0.0
+
+  , optShowVersion  :: Bool
     -- ^ Flag for showing version.
-  , optShowNumeric :: Bool
+  , optShowNumeric  :: Bool
     -- ^ Flag for showing numeric version.
-  , optShowHelp    :: Bool
+  , optShowHelp     :: Bool
     -- ^ Flag for showing help message.
   }
 
@@ -92,6 +102,8 @@ emptyOptions = Options
   , optRootDir = ""
   , optBuildDir = Nothing
   , optSkipDirs = []
+  , optExprOnly = False
+  , optIgnoreDittos = False
   , optShowVersion = False
   , optShowNumeric = False
   , optShowHelp = False
@@ -152,6 +164,14 @@ options =
            "Format of generated report\n\
            \'codecov', 'lcov', or 'cobertura'\n\
            \(default: codecov)"
+
+  , Option [] ["expr-only"]
+           (NoArg (\o -> o {optExprOnly = True}))
+           "Count expressions only"
+  , Option [] ["ignore-dittos"]
+           (NoArg (\o -> o {optIgnoreDittos = True}))
+           "Ignore consecutive entries with the\n\
+           \same source code positions"
 
   , Option ['v'] ["verbose"]
            (NoArg (\o -> o {optVerbose = True}))
@@ -237,6 +257,8 @@ opt2rpt opt = do
         , reportExcludes = optExcludes opt
         , reportOutFile = optOutFile opt
         , reportVerbose = verbose
+        , reportExprOnly = optExprOnly opt
+        , reportIgnoreDittos = optIgnoreDittos opt
         }
       tix = optTix opt
       verbose = optVerbose opt

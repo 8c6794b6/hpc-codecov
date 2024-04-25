@@ -1,0 +1,1 @@
+Mix "ith01.hs" 2024-04-23 03:53:32.953597733 UTC 3976838569 8 [(9:2-9:8,ExpBox False),(9:2-9:8,TopLevelBox ["bar"]),(13:9-13:11,ExpBox False),(13:3-13:11,ExpBox False),(14:9-14:11,ExpBox False),(14:3-14:11,ExpBox False),(12:8-14:11,ExpBox False),(12:1-14:11,TopLevelBox ["main"]),(7:2-7:8,ExpBox False),(7:2-7:8,TopLevelBox ["foo"])]

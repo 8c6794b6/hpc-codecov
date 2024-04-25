@@ -23,7 +23,7 @@ import           Data.Monoid                 ((<>))
 
 -- filepath
 import           System.FilePath             (joinPath, takeFileName,
-                                              (</>))
+                                              (<.>), (</>))
 
 -- directory
 import           System.Directory            (canonicalizePath,
@@ -82,6 +82,7 @@ main = do
 
   defaultMain $ testGroup "main" $
     [reportTest, cmdline, recipReport, exceptionTest, parserTest] ++
+    [exprOnly, ignoreDittos] ++
     [selfReportTest | not test_in_test, isJust mb_tool] ++
     [discoverStackTest | not test_in_test, mb_tool == Just Stack] ++
     [discoverCabalTest | not test_in_test, mb_tool == Just Cabal]
@@ -130,6 +131,7 @@ reportTest = testGroup "report"
           r3 = r1 <> r2
       assertEqual "<> for verbose" (reportVerbose r3) True
       assertEqual "<> for excludes" (reportExcludes r3) ["M1","M2","M3"]
+      assertEqual "default format" (reportFormat mempty) Codecov
   ]
 
 cmdline :: TestTree
@@ -183,6 +185,41 @@ recipReport = testGroup "recip"
                        ,"--verbose"
                        ,"test/data/reciprocal/reciprocal.tix"]))
   ]
+
+exprOnly :: TestTree
+exprOnly = testGroup "expr-only" $
+  let eo01_dir = joinPath ["test", "data", "eo01"]
+      common_args = ["--mix=" <> (eo01_dir </> ".hpc")
+                    ,"--src=" <> eo01_dir
+                    ,"--expr-only"
+                    ,eo01_dir </> "eo01.tix"]
+  in  [ let golden_path = goldenPath (ofile <.> "golden")
+            ofile = eo01_dir </> "eo01.json"
+            act = main' (common_args <> ["--out=" <> ofile])
+        in  goldenVsFile "expr-only" golden_path ofile act
+
+      , let golden_path = goldenPath (ofile <.> "golden")
+            ofile = eo01_dir </> "eo01.info"
+            act = main' (common_args <> ["--out=" <> ofile,"-flcov"])
+        in goldenVsFile "expr-only-lcov" golden_path ofile act
+      ]
+
+ignoreDittos :: TestTree
+ignoreDittos = testGroup "ignore-dittos" $
+  let doGolden name =
+        let golden_path = goldenPath (ofile <.> "golden")
+            ofile = dir </> name <.> "json"
+            tix = dir </> name <.> "tix"
+            dir = joinPath ["test", "data", name]
+            act = main' [ "--mix=" <> (dir </> ".hpc")
+                        , "--src=" <> dir
+                        , "--out=" <> ofile
+                        , "--ignore-dittos"
+                        , tix ]
+        in  goldenVsFile name golden_path ofile act
+  in  [ doGolden "ifd01"
+      , doGolden "ith01"
+    ]
 
 -- Note: Running test to generate .mix and .tix of hpc-codecov package
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -341,7 +378,7 @@ selfReport getArgs = testGroup "self"
 
 discoverStackTest :: TestTree
 discoverStackTest =
-  let t = buildAndTestWithStack
+  let t = buildAndTestWith Stack
       withProject name act = case getAcquireAndRelease Stack name [] of
         (a,r) -> withResource a r (const act)
   in  testGroup "discover_stack"
@@ -357,6 +394,7 @@ discoverStackTest =
           [ t "project1"
             [ "--root=" ++ testData "project1"
             , "--verbose"
+            , "--exclude=Paths_project1,Spec"
             , "--build=dot-stack-work"
             , "stack:project1-test.tix"]
             ["--work-dir=dot-stack-work"]
@@ -384,11 +422,7 @@ discoverStackTest =
         , after AllSucceed "cobertura.project1" $
           testGroup "golden"
           [ let ofile = "project1-refilled.xml"
-                golden_file =
-                  if os == "mingw32" then
-                    "project1-windows.xml.golden"
-                  else
-                    "project1.xml.golden"
+                golden_file = goldenPath "project1.xml.golden"
                 golden_path = joinPath ["test", "data", "golden", golden_file]
                 act = refillTimestampWithZero "project1.xml" ofile
             in  goldenVsFile "cobertura" golden_path ofile act
@@ -426,14 +460,14 @@ refillTimestampWithZero ipath opath = do
 
 discoverCabalTest :: TestTree
 discoverCabalTest =
-  let t = buildAndTestWithCabal
+  let t = buildAndTestWith Cabal
       withProject name act = case getAcquireAndRelease Cabal name [] of
         (a,r) -> withResource a r (const act)
   in  testGroup "discover_cabal"
         [ t "project1"
           [ "--root=" ++ testData "project1"
           , "--verbose"
-          , "-x", "Paths_project1"
+          , "-x", "Paths_project1,Spec"
           , "-X", "project1-exe"
           , "cabal:project1-test" ]
           []
@@ -451,12 +485,6 @@ discoverCabalTest =
                         , "-f", "lcov"
                         , "cabal:" ++ canonical_tix_path])
         ]
-
-buildAndTestWithStack :: String -> [String] -> [String] -> TestTree
-buildAndTestWithStack = buildAndTestWith Stack
-
-buildAndTestWithCabal :: String -> [String] -> [String] -> TestTree
-buildAndTestWithCabal = buildAndTestWith Cabal
 
 buildAndTestWith :: BuildTool -> String -> [String] -> [String] -> TestTree
 buildAndTestWith tool name args tool_args = withResource acquire release work
@@ -564,3 +592,8 @@ shouldFail act =
 -- | Get directory under test data.
 testData :: String -> FilePath
 testData dir = "test" </> "data" </> dir
+
+goldenPath :: FilePath -> FilePath
+goldenPath path
+  | os == "mingw32" = path <.> "windows"
+  | otherwise = path
