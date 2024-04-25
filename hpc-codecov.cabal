@@ -43,6 +43,24 @@ extra-source-files:
   test/data/project1/test/Spec.hs
   test/data/project1/project1.cabal
   test/data/project1/stack.yaml
+  --
+  test/data/eo01/eo01.hs
+  test/data/eo01/eo01.tix
+  test/data/eo01/eo01.info.golden
+  test/data/eo01/eo01.json.golden
+  test/data/eo01/.hpc/Main.mix
+  --
+  test/data/ifd01/ifd01.hs
+  test/data/ifd01/ifd01.tix
+  test/data/ifd01/ifd01.json.golden
+  test/data/ifd01/.hpc/Main.mix
+  --
+  test/data/ith01/ith01.hs
+  test/data/ith01/ith01.tix
+  test/data/ith01/ith01.json.golden
+  test/data/ith01/TH01.hs
+  test/data/ith01/.hpc/Main.mix
+  test/data/ith01/.hpc/TH01.mix
 
 tested-with:           GHC == 8.10.7
                      , GHC == 9.0.2
