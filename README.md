@@ -129,6 +129,32 @@ comma to separate multiple values for the ``-x`` option:
 $ hpc-codecov -X my-project -x Main,Paths_my_project cabal:my-project-test
 ```
 
+### Project using cabal-install, count expressions only
+
+Search under the directry made by ``cabal-install``, generating a
+report for a test suite named ``my-project-test``. Ignore the entries
+in ``.mix`` file other than ``ExpBox`` (i.e.; ignore ``TopLevelBox``,
+``LocalBox``, and ``BinBox`` constructors of
+[``BoxLabel``](https://hackage.haskell.org/package/hpc-0.7.0.1/docs/Trace-Hpc-Mix.html#t:BoxLabel)
+data in ``.mix`` file).
+
+```console
+$ hpc-codecov --expr-only cabal:my-project-test
+```
+
+### Project using cabal-install, ignore compiler generated source codes
+
+Search under the directory made by ``cabal-install``, generating a
+report for a test suite named ``my-projejct-test``. Ignore the
+consecutive ``.mix`` entries with identical start and end source code
+positions, which is a sign of compiler-generated source codes. The
+``--ignore-dittos`` option may affects codes containing record field
+declarations, derived instances, and TemplateHaskell.
+
+```console
+$ hpc-codecov --ignore-dittos cabal:my-project-test
+```
+
 ### Project using stack
 
 Search under the directory made by ``stack`` for a test suite named
