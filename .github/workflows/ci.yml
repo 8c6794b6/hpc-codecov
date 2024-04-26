@@ -202,6 +202,7 @@ jobs:
         run: readelf -d ./bin/${{ env.exe }}
 
       - name: Compress executable
+        if: runner.os != 'macOS'
         uses: svenstaro/upx-action@v2
         with:
           files: ./bin/${{ env.exe }}
