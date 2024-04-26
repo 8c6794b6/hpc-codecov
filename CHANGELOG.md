@@ -1,6 +1,6 @@
 # Revision history for hpc-codecov
 
-## Unreleased
+## 0.6.0.0 -- 2024-04-26
 
 - Add "--expr-only" option. This option will ignore other constructor
   than 'ExpBox' in 'Trace.Hpc.Mix.BoxLabel' data type when collecting
