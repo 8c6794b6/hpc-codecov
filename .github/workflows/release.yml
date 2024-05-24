@@ -1,0 +1,38 @@
+name: Release on new tag
+
+on:
+  workflow_call:
+
+jobs:
+  release:
+    name: Release on new tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: bin
+          pattern: hpc-codecov*
+          merge-multiple: true
+
+      - name: Show contents of the bin directory
+        run: ls -lh bin
+
+      - name: Make release
+        uses: softprops/action-gh-release@v2
+        id: rel
+        with:
+          draft: true
+          prerelease: true
+          body: ''
+          files: |
+            bin/hpc-codecov-Linux
+            bin/hpc-codecov-Linux-static
+            bin/hpc-codecov-Windows.exe
+            bin/hpc-codecov-macOS
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Show released URL
+        if: startsWith(github.ref, 'refs/tags')
+        run: echo ${{ steps.rel.outputs.url }}
