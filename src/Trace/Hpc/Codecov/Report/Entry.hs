@@ -1,4 +1,5 @@
 -- |
+{-# LANGUAGE CPP #-}
 -- Module:     Trace.Hpc.Codecov.Report.Entry
 -- Copyright:  (c) 2023 8c6794b6
 -- License:    BSD3
@@ -25,8 +26,12 @@ import           Control.Exception           (ErrorCall, handle, throw,
 import           Control.Monad               (when)
 import           Control.Monad.ST            (ST)
 import           Data.Function               (on)
-import           Data.List                   (foldl', intercalate)
+import           Data.List                   (intercalate)
 import           System.IO                   (hPutStrLn, stderr)
+
+#if !MIN_VERSION_base(4,20,0)
+import           Data.List                   (foldl')
+#endif
 
 -- array
 import           Data.Array.Base             (unsafeAt)

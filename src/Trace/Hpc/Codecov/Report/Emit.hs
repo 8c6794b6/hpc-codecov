@@ -17,9 +17,13 @@ module Trace.Hpc.Codecov.Report.Emit
 
 -- base
 import           Data.Char                         (isUpper)
-import           Data.List                         (foldl', intercalate,
+import           Data.List                         (intercalate,
                                                     intersperse)
 import           System.IO.Unsafe                  (unsafePerformIO)
+
+#if !MIN_VERSION_base(4,20,0)
+import           Data.List                         (foldl')
+#endif
 
 #if !MIN_VERSION_bytestring(0,11,0)
 import           Text.Printf                       (printf)
