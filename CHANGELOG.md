@@ -1,5 +1,11 @@
 # Revision history for hpc-codecov
 
+## Unreleased
+
+- Suppress warning messages when compiling with ghc 9.10.
+
+- Modify version range of filepath to >= 1.5.0 && < 1.6.
+
 ## 0.6.0.0 -- 2024-04-26
 
 - Add "--expr-only" option. This option will ignore other constructor
