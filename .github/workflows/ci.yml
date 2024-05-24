@@ -6,307 +6,45 @@ on:
     paths-ignore:
       - '**.md'
 
-env:
-  cache-version: v2
-
 defaults:
   run:
     shell: bash
 
 jobs:
+  pre_job:
+    uses: ./.github/workflows/pre_job.yml
+
   stack:
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
-
-    runs-on:
-      - ${{ matrix.os }}
-
-    steps:
-    - name: Checkout project repository
-      uses: actions/checkout@v4
-
-    - name: Show stack version
-      run: stack --version
-
-    - name: Get stack root
-      id: stack-root
-      env:
-        os: ${{ runner.os }}
-      run: |
-        echo os=$os
-        case $os in
-          "Linux")
-             echo "path=$HOME/.stack" >> $GITHUB_OUTPUT
-             ;;
-          "macOS")
-             echo "path=$HOME/.stack" >> $GITHUB_OUTPUT
-             ;;
-          *)
-             echo "path=C:/Users/runneradmin/AppData/Roaming/stack" >> $GITHUB_OUTPUT
-             ;;
-        esac
-
-    - name: Cache stack root
-      if: runner.os != 'macOS'
-      id: stack-global
-      uses: actions/cache@v4
-      with:
-        path: ${{ steps.stack-root.outputs.path }}
-        key: ${{ runner.os }}-stack-global-${{ hashFiles('**.yaml') }}-${{ env.cache-version }}
-
-    - name: Cache windows optional data for stack
-      if: matrix.os == 'windows-latest'
-      uses: actions/cache@v4
-      with:
-        path: C:\Users\runneradmin\AppData\Local\Programs\stack
-        key: ${{ runner.os }}-stack-program-${{ hashFiles('**.yaml') }}-${{ env.cache-version }}
-
-    - name: Set stack to use system ghc
-      run: stack config set system-ghc --global true
-
-    - name: Install dependency packages
-      run: stack build --fast --test --coverage --only-dependencies
-
-    - name: Build packages
-      run: stack build --fast --test --coverage --no-run-tests
-
-    - name: Run tests
-      run: stack build --fast --test --coverage
-
-    - name: Generate JSON coverage report
-      run: |
-        STACK="stack"
-        HPCROOT=$($STACK path --local-hpc-root)
-        TIX=$(find $HPCROOT -name 'test-main.tix')
-        MIX=$($STACK path --dist-dir)/hpc
-        $STACK exec -- hpc-codecov --verbose --mix=$MIX -o codecov.json $TIX
-
-    - name: Generate LCOV coverage report
-      run: |
-        stack exec -- hpc-codecov --verbose -flcov -o lcov.info stack:test-main
-
-    - name: Generate Cobertura coverage report
-      run: |
-        stack exec -- hpc-codecov --verbose -fcobertura -o coverage.xml stack:test-main
-
-    - name: Upload coverage report
-      uses: codecov/codecov-action@v4
-      with:
-        name: gh-stack-${{ matrix.os }}
-        token: ${{ secrets.CODECOV_TOKEN }}
+    needs: pre_job
+    if: ${{ needs.pre_job.outputs.run_it == 'true' }}
+    uses: ./.github/workflows/stack.yml
+    secrets: inherit
+    with:
+      cache: v3
 
   cabal-install:
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
-
-    runs-on:
-      - ${{ matrix.os }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Show versions
-        run: |
-          ghc --version
-          cabal --version
-
-      - name: Configure
-        run: cabal configure -O2 --enable-executable-stripping
-
-      - name: Set .exe extension on windows
-        if: matrix.os == 'windows-latest'
-        id: extension
-        run: echo "exe=.exe" >> $GITHUB_OUTPUT
-
-      - name: Set executable name
-        id: exename
-        run: echo "exename=hpc-codecov-${{ runner.os }}${{ steps.extension.outputs.exe }}" >> $GITHUB_OUTPUT
-
-      - name: Set executable path
-        id: bin
-        run: echo "path=bin/${{ steps.exename.outputs.exename }}" >> $GITHUB_OUTPUT
-
-      - name: Create bin directory
-        run: mkdir ./bin/
-
-      - name: Install to current directory
-        run: cabal install --install-method=copy --installdir=./bin
-
-      - name: Rename the executable
-        run: mv -v bin/hpc-codecov${{ steps.extension.outputs.exe}} ${{ steps.bin.outputs.path }}
-
-      - name: Show executable
-        run: ls -lh ${{ steps.bin.outputs.path }}
-
-      - name: Strip executable
-        if: matrix.os != 'macos-latest'
-        run: strip -s ${{ steps.bin.outputs.path }}
-
-      - name: Compress executable
-        if: runner.os != 'macOS'
-        uses: svenstaro/upx-action@v2
-        with:
-          files: ${{ steps.bin.outputs.path }}
-          args: -9
-          strip: false
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.exename.outputs.exename }}
-          path: ${{ steps.bin.outputs.path }}
+    needs: pre_job
+    if: ${{ needs.pre_job.outputs.run_it == 'true' }}
+    uses: ./.github/workflows/cabal-install.yml
+    with:
+      cache: v3
 
   static-executable-for-linux:
-    name: Build a static executable for Linux
-    runs-on: ubuntu-latest
-    env:
-      exe: hpc-codecov-Linux-static
-    container:
-      image: fossa/haskell-static-alpine:ghc-9.4.8
-    steps:
-      - name: Show versions
-        run: |
-          ghc --version
-          cabal --version
-
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Update cabal package index
-        run: cabal update
-
-      - name: Run cabal configure
-        run: cabal configure -O2 --enable-executable-static
-
-      - name: Show cabal.project.local
-        run: cat cabal.project.local
-
-      - name: Run cabal build
-        run: cabal build
-
-      - name: Copy the executable
-        run: mkdir ./bin && cp -v $(cabal list-bin hpc-codecov) ./bin/${{ env.exe }}
-
-      - name: Strip the executable
-        run: strip -s ./bin/${{ env.exe }}
-
-      - name: Run readelf
-        run: readelf -d ./bin/${{ env.exe }}
-
-      - name: Compress executable
-        if: runner.os != 'macOS'
-        uses: svenstaro/upx-action@v2
-        with:
-          files: ./bin/${{ env.exe }}
-          args: -9
-          strip: false
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.exe }}
-          path: bin/${{ env.exe }}
+    needs: pre_job
+    if: ${{ needs.pre_job.outputs.run_it == 'true' }}
+    uses: ./.github/workflows/static-executable.yml
 
   container-image:
-    name: Build and push a container image
-    runs-on: ubuntu-latest
-    needs:
-      - static-executable-for-linux
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Show docker version
-        run: docker --version
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: hpc-codecov-Linux-static
-          path: ./
-
-      - name: Change mode
-        run: chmod +x hpc-codecov-Linux-static
-
-      - name: Show contents of current directory
-        run: ls -lh
-
-      - name: Build and push a container image
-        if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
-        uses: macbre/push-to-ghcr@master
-        with:
-          image_name: ${{ github.repository }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-
-  via-action:
-    name: Run hpc-codecov-action
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup cabal
-        run: cabal update
-
-      - name: Build and test
-        run: cabal test --enable-coverage
-
-      - name: Generate coverage report
-        uses: 8c6794b6/hpc-codecov-action@v3
-        with:
-          target: cabal:test-main
-          excludes: Main,Test.Main,Paths_hpc_codecov
-
-      - name: Send coverage report
-        uses: codecov/codecov-action@v4
-        with:
-          name: hpc-codecov-action
-          token: ${{ secrets.CODECOV_TOKEN }}
-
+    needs: static-executable-for-linux
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    uses: ./.github/workflows/container-image.yml
+    secrets: inherit
+      
   release:
-    name: Release on new tag
-    runs-on: ubuntu-latest
     needs:
       - stack
       - cabal-install
       - static-executable-for-linux
-
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: bin
-          pattern: hpc-codecov*
-          merge-multiple: true
-
-      - name: Show contents of the bin directory
-        run: ls -lh bin
-
-      - name: Make release
-        if: startsWith(github.ref, 'refs/tags')
-        uses: softprops/action-gh-release@v2
-        id: rel
-        with:
-          draft: true
-          prerelease: true
-          body: ''
-          files: |
-            bin/hpc-codecov-Linux
-            bin/hpc-codecov-Linux-static
-            bin/hpc-codecov-Windows.exe
-            bin/hpc-codecov-macOS
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Show released URL
-        if: startsWith(github.ref, 'refs/tags')
-        run: echo ${{ steps.rel.outputs.url }}
+    if: startsWith(github.ref, 'refs/tags')
+    uses: ./.github/workflows/release.yml
+    secrets: inherit

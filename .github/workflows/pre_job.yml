@@ -1,0 +1,24 @@
+name: Pre jobs
+
+on:
+  workflow_call:
+    outputs:
+      run_it:
+        description: \"true\" if running other jobs
+        value: ${{ jobs.pre_job.outputs.run_it }}
+
+jobs:
+  pre_job:
+    name: Determine whether to run other jobs
+    runs-on: ubuntu-latest
+    outputs:
+      run_it: >-
+        ${{
+        steps.skip_check.outputs.should_skip != 'true' ||
+        github.ref_name == github.event.repository.default_branch
+        }}
+    steps:
+      - id: skip_check
+        uses: fkirc/skip-duplicate-actions@v5
+        with:
+          concurrent_skipping: same_content_newer
