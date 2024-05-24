@@ -1,0 +1,93 @@
+name: cabal-install
+
+on:
+  workflow_call:
+    inputs:
+      cache:
+        description: cache key version
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  cabal-install:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+    runs-on:
+      - ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set os specific values
+        id: os
+        run: |
+          case ${{ runner.os }} in
+            "Windows")
+              ext=.exe
+              echo "store=C:sr" >> $GITHUB_OUTPUT
+              echo "ext=${ext}" >> $GITHUB_OUTPUT
+              ;;
+            *)
+              ext=
+              echo "store=${HOME}/.cabal" >> $GITHUB_OUTPUT
+              echo "ext=${ext}" >> $GITHUB_OUTPUT
+              ;;
+          esac
+
+          exename=hpc-codecov-${{ runner.os }}${ext}
+          echo "exename=${exename}" >> $GITHUB_OUTPUT
+          echo "path=bin/${exename}" >> $GITHUB_OUTPUT
+
+      - name: Cache cabal store directory
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.os.outputs.store }}
+          key: cabal-store-${{ env.cache-version }}
+
+      - name: Cache ghc under macOS
+        if: runner.os == 'macos'
+        uses: actions/cache@v4
+        with:
+          path: ~/.ghcup
+          key: ghcup-${{ runner.os }}-${{ env.cache-version }}
+
+      - name: Setup ghc and cabal-install
+        uses: haskell-actions/setup@v2
+
+      - name: Configure
+        run: cabal configure -O2 --enable-executable-stripping
+
+      - name: Install to current directory
+        run: |
+          mkdir -v ./bin
+          cabal install --install-method=copy --installdir=./bin
+          mv -v bin/hpc-codecov${{ steps.os.outputs.ext }} ${{ steps.os.outputs.path }}
+          ls -lh ${{ steps.os.outputs.path }}
+
+      - name: Strip executable
+        if: runner.os != 'macos'
+        run: strip -s ${{ steps.os.outputs.path }}
+
+      - name: Compress executable
+        if: runner.os != 'macos'
+        uses: svenstaro/upx-action@v2
+        with:
+          files: ${{ steps.os.outputs.path }}
+          args: -9
+          strip: false
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.os.outputs.exename }}
+          path: ${{ steps.os.outputs.path }}

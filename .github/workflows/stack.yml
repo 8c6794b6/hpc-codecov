@@ -1,0 +1,70 @@
+name: stack
+
+on:
+  workflow_call:
+    inputs:
+      cache:
+        description: cache key version
+        required: true
+        type: string
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  stack:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+
+    runs-on:
+      - ${{ matrix.os }}
+
+    steps:
+    - name: Checkout project repository
+      uses: actions/checkout@v4
+
+    - name: Cache stack related directories
+      uses: 8c6794b6/playing-with-github/.github/actions/setup-stack-cache@main
+      with:
+        cache-key: ${{ hashFiles('stack.yaml') }}-${{ inputs.cache }}
+
+    - name: Setup stack
+      uses: haskell-actions/setup@v2
+      with:
+        enable-stack: true
+        stack-no-global: true
+
+    - name: Show stack version
+      run: stack --version
+
+    - name: Install dependency packages
+      run: stack build --fast --test --coverage --only-dependencies
+
+    - name: Build packages
+      run: stack build --fast --test --coverage --no-run-tests
+
+    - name: Run tests
+      run: stack build --fast --test --coverage
+
+    - name: Generate JSON coverage report
+      run: |
+        stack exec -- hpc-codecov --verbose -o codecov.json stack:test-main
+
+    - name: Generate LCOV coverage report
+      run: |
+        stack exec -- hpc-codecov --verbose -flcov -o lcov.info stack:test-main
+
+    - name: Generate Cobertura coverage report
+      run: |
+        stack exec -- hpc-codecov --verbose -fcobertura -o coverage.xml stack:test-main
+
+    - name: Upload coverage report
+      uses: codecov/codecov-action@v4
+      with:
+        name: gh-stack-${{ matrix.os }}
+        token: ${{ secrets.CODECOV_TOKEN }}

@@ -1,0 +1,30 @@
+name: Run hpc-codecov-action
+
+on:
+  workflow_call:
+
+jobs:
+  via-action:
+    name: Run hpc-codecov-action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup cabal
+        run: cabal update
+
+      - name: Build and test
+        run: cabal test --enable-coverage
+
+      - name: Generate coverage report
+        uses: 8c6794b6/hpc-codecov-action@v3
+        with:
+          target: cabal:test-main
+          excludes: Main,Test.Main,Paths_hpc_codecov
+
+      - name: Send coverage report
+        uses: codecov/codecov-action@v4
+        with:
+          name: hpc-codecov-action
+          token: ${{ secrets.CODECOV_TOKEN }}
