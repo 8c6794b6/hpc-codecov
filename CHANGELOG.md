@@ -4,7 +4,7 @@
 
 - Suppress warning messages when compiling with ghc 9.10.
 
-- Modify version range of filepath to >= 1.5.0 && < 1.6.
+- Modify version range of filepath to support 1.5.x.
 
 ## 0.6.0.0 -- 2024-04-26
 
