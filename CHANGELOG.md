@@ -1,6 +1,6 @@
 # Revision history for hpc-codecov
 
-## Unreleased
+## 0.6.1.0 -- 2024-05-29
 
 - Suppress warning messages when compiling with ghc 9.10.
 
