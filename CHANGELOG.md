@@ -1,5 +1,10 @@
 # Revision history for hpc-codecov
 
+## Unreleased
+
+- Support searching under the build directory made by
+  ``cabal-install`` 3.12.1.0.
+
 ## 0.6.1.0 -- 2024-05-29
 
 - Suppress warning messages when compiling with ghc 9.10.
