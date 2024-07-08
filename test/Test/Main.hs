@@ -11,10 +11,10 @@ import           Data.Maybe                  (fromMaybe, isJust)
 import           System.Environment          (getExecutablePath, lookupEnv,
                                               setEnv, unsetEnv, withArgs)
 import           System.Exit                 (ExitCode)
+import           System.Info                 (os)
 import           System.IO                   (IOMode (..), hClose,
                                               hGetContents, openBinaryFile,
                                               openTempFile)
-import           System.Info                 (os)
 
 #if !MIN_VERSION_base(4,11,0)
 import           Data.Monoid                 ((<>))
@@ -28,7 +28,6 @@ import           System.FilePath             (joinPath, takeFileName,
 -- directory
 import           System.Directory            (canonicalizePath,
                                               doesDirectoryExist,
-                                              listDirectory,
                                               removeDirectoryRecursive,
                                               removeFile,
                                               withCurrentDirectory)
@@ -246,6 +245,7 @@ selfReportTest = withTempDir work1
 data SRA =
   SRA { sra_tix      :: FilePath
       , sra_mixs     :: [FilePath]
+      , sra_build    :: Maybe FilePath
       , sra_excludes :: [String]
       , sra_verbose  :: Bool
       , sra_format   :: Format
@@ -256,6 +256,7 @@ emptySRA :: SRA
 emptySRA = SRA { sra_tix = ""
                , sra_mixs = []
                , sra_excludes = []
+               , sra_build = Nothing
                , sra_verbose = False
                , sra_format = Codecov
                , sra_out = Nothing }
@@ -321,20 +322,8 @@ setupV2 bd =
 getSelfReportCabalArgs :: (FilePath -> IO ()) -> FilePath -> IO SRA
 getSelfReportCabalArgs setup bd = do
   setup bd
-  mb_tix <- findUnder (\p -> takeFileName p == "test-main.tix") bd
-  putStrLn $ "tix: " ++ show mb_tix
-  mb_vanilla <- findUnder (\p -> takeFileName p == "vanilla") bd
-  putStrLn $ "vanilla: " ++ show mb_vanilla
-  case (mb_tix, mb_vanilla) of
-    (Nothing, Nothing) -> error "failed to find tix and vanilla"
-    (Nothing, _) -> error "failed to find tix"
-    (_, Nothing) -> error "failed to find vanilla"
-    (Just tix, Just vanilla) -> do
-      let mixdir = vanilla </> "mix"
-      mixs <- map (mixdir </>) <$> listDirectory mixdir
-      return emptySRA { sra_tix = tix
-                      , sra_mixs = mixs
-                      , sra_excludes = ["Main", "Paths_hpc_codecov"] }
+  pure emptySRA { sra_tix = "cabal:test-main"
+                , sra_build = Just bd }
 
 selfReport :: IO SRA -> TestTree
 selfReport getArgs = testGroup "self"
@@ -367,7 +356,7 @@ selfReport getArgs = testGroup "self"
                  shouldFail (sraMain args'))
   ]
   where
-    tixOnly sra = emptySRA { sra_tix = sra_tix sra }
+    tixOnly _sra = emptySRA { sra_tix = "test-main.tix" }
 
 
 -- ------------------------------------------------------------------------
@@ -551,6 +540,7 @@ sraMain sra = main' args
     args =
       map ("--mix=" ++) (sra_mixs sra) ++
       map ("--exclude=" ++) (sra_excludes sra) ++
+      maybe [] (\d -> ["--build=" ++ d]) (sra_build sra) ++
       maybe [] (\p -> ["--out=" ++ p]) (sra_out sra) ++
       ["--verbose" | sra_verbose sra] ++
       ["--format=" ++ asFormat (sra_format sra)] ++
