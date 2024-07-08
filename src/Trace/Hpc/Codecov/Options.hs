@@ -198,14 +198,14 @@ parseOptions args =
       -- argument at this point, to show help and version messages
       -- without specifying ".tix" file.
       let opts0 = foldr ($) emptyOptions flags
-          opts1 = fillDefaultIfNotGiven opts0
+          opts1 = fillDefaultsIfNotGiven opts0
       in  case rest of
             []      -> Right opts1
             (tix:_) -> Right (opts1 {optTix = tix})
     (_, _, errs)  -> Left errs
 
-fillDefaultIfNotGiven :: Options -> Options
-fillDefaultIfNotGiven opts = opts
+fillDefaultsIfNotGiven :: Options -> Options
+fillDefaultsIfNotGiven opts = opts
   { optMixDirs = fillIf null optMixDirs
   , optSrcDirs = fillIf null optSrcDirs
   }
@@ -260,10 +260,9 @@ opt2rpt opt = do
         , reportExprOnly = optExprOnly opt
         , reportIgnoreDittos = optIgnoreDittos opt
         }
-      tix = optTix opt
       verbose = optVerbose opt
   format <- parseFormat (optFormat opt)
-  target <- parseTarget tix
+  target <- parseTarget (optTix opt)
   case target of
     TixFile path -> pure (rpt1 {reportTix = path
                                ,reportFormat = format})
