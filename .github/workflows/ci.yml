@@ -29,11 +29,11 @@ jobs:
     with:
       cache: v3
 
-  via-action:
-    needs: pre_job
-    if: ${{ needs.pre_job.outputs.run_it == 'true' }}
-    uses: ./.github/workflows/via-action.yml
-    secrets: inherit
+  # via-action:
+  #   needs: pre_job
+  #   if: ${{ needs.pre_job.outputs.run_it == 'true' }}
+  #   uses: ./.github/workflows/via-action.yml
+  #   secrets: inherit
 
   static-executable-for-linux:
     needs: pre_job
