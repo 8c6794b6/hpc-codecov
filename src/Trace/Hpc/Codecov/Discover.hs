@@ -233,7 +233,9 @@ findVanilla ignored p acc@(mb_tix, dirs) = do
          then do
            let f xs = [mix </> x| x <- xs, x `notElem` ignored]
            contents <- f <$> listDirectory mix
-           return (mb_tix, contents ++ dirs)
+           -- From cabal-install 3.12, the 'mix' directory itself is
+           -- used as the root directory of .mix files.
+           return (mb_tix, mix : contents ++ dirs)
          else return (mb_tix, dirs)
     else return acc
 
