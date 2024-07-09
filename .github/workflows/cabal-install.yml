@@ -54,13 +54,6 @@ jobs:
           path: ${{ steps.os.outputs.store }}
           key: cabal-store-${{ env.cache-version }}
 
-      - name: Cache ghc under macOS
-        if: runner.os == 'macos'
-        uses: actions/cache@v4
-        with:
-          path: ~/.ghcup
-          key: ghcup-${{ runner.os }}-${{ env.cache-version }}
-
       - name: Setup ghc and cabal-install
         uses: haskell-actions/setup@v2
 
