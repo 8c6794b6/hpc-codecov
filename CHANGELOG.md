@@ -1,6 +1,6 @@
 # Revision history for hpc-codecov
 
-## Unreleased
+## 0.6.2.0 -- 2024-07-09
 
 - Support searching under the build directory made by
   ``cabal-install`` 3.12.1.0.
