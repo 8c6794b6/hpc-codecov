@@ -411,6 +411,7 @@ discoverStackTest =
             , "--verbose"
             , "--format=cobertura"
             , "--out=project1.xml"
+            , "--exclude=Paths_project1"
             , "stack:project1-test"]
             []
           ]
