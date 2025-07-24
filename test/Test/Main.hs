@@ -370,7 +370,14 @@ discoverStackTest =
   let t = buildAndTestWith Stack
       withProject name act = case getAcquireAndRelease Stack name [] of
         (a,r) -> withResource a r (const act)
-  in  testGroup "discover_stack"
+      do_nothing _ = pure ()
+      rmdir_in_project1 dir =
+        removeDirectoryRecursiveIfExist (testData "project1" </> dir)
+      remove_stack_build_dirs =
+        mapM_ rmdir_in_project1 [".stack-work", "dot-stack-work"]
+      cleanUpDirs tree =
+        withResource remove_stack_build_dirs do_nothing (\_ -> tree)
+  in  cleanUpDirs $ testGroup "discover_stack"
         [ testGroup "plain"
           [ t "project1"
             [ "--root=" ++ testData "project1"
@@ -452,7 +459,11 @@ discoverCabalTest =
   let t = buildAndTestWith Cabal
       withProject name act = case getAcquireAndRelease Cabal name [] of
         (a,r) -> withResource a r (const act)
-  in  testGroup "discover_cabal"
+      cabal_clean =
+        callProcessIn (testData "project1") "cabal" ["clean"]
+      cleanUpDirs tree =
+        withResource cabal_clean (const $ pure ()) (const tree)
+  in  cleanUpDirs $ testGroup "discover_cabal"
         [ t "project1"
           [ "--root=" ++ testData "project1"
           , "--verbose"
@@ -565,10 +576,16 @@ withTempDir = withResource acquire release
          Just Stack -> pure ".hpc_codecov_test_tmp_stack"
          Just Cabal -> pure ".hpc_codecov_test_tmp_cabal_v2"
          _          -> error "Cannot determine build tool"
-       exists <- doesDirectoryExist dir
-       when exists $ removeDirectoryRecursive dir
+       removeDirectoryRecursiveIfExist dir
        pure dir
      release _ = return ()
+
+-- | Simple wrapper to remove directory recursively. Does not catch
+-- exceptions.
+removeDirectoryRecursiveIfExist :: FilePath -> IO ()
+removeDirectoryRecursiveIfExist dir = do
+  exist <- doesDirectoryExist dir
+  when exist $ removeDirectoryRecursive dir
 
 -- | Pass the HUnit test when an exception was thrown, otherwise a
 -- test failure.
