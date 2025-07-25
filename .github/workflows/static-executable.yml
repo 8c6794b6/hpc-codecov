@@ -10,7 +10,7 @@ jobs:
     env:
       exe: hpc-codecov-Linux-static
     container:
-      image: fossa/haskell-static-alpine:ghc-9.4.8
+      image: fossa/haskell-static-alpine:ghc-9.8.2
     steps:
       - name: Show versions
         run: |
