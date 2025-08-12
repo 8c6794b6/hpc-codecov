@@ -18,7 +18,7 @@ jobs:
           which cabal && cabal --version
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Update cabal package index
         run: cabal update
