@@ -26,7 +26,7 @@ jobs:
 
     steps:
     - name: Checkout project repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Cache stack related directories
       uses: 8c6794b6/playing-with-github/.github/actions/setup-stack-cache@main
