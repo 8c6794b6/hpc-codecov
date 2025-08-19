@@ -26,10 +26,11 @@ jobs:
           prerelease: true
           body: ''
           files: |
-            bin/hpc-codecov-Linux
-            bin/hpc-codecov-Linux-static
-            bin/hpc-codecov-Windows.exe
-            bin/hpc-codecov-macOS
+            bin/hpc-codecov-Linux-ARM64
+            bin/hpc-codecov-Linux-X64
+            bin/hpc-codecov-Linux-X64-static
+            bin/hpc-codecov-Windows-X64.exe
+            bin/hpc-codecov-macOS-ARM64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
