@@ -8,7 +8,7 @@ jobs:
     name: Build static executable for Linux
     runs-on: ubuntu-latest
     env:
-      exe: hpc-codecov-Linux-static
+      exe: hpc-codecov-Linux-X64-static
     container:
       image: fossa/haskell-static-alpine:ghc-9.8.2
     steps:

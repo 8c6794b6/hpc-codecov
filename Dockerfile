@@ -1,2 +1,2 @@
 FROM busybox:musl
-COPY hpc-codecov-Linux-static /bin/hpc-codecov
+COPY hpc-codecov-Linux-X64-static /bin/hpc-codecov

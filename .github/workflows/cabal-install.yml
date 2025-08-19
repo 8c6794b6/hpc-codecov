@@ -18,6 +18,7 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
+          - ubuntu-24.04-arm
           - macos-latest
           - windows-latest
 
@@ -44,7 +45,7 @@ jobs:
               ;;
           esac
 
-          exename=hpc-codecov-${{ runner.os }}${ext}
+          exename=hpc-codecov-${{ runner.os }}-${{ runner.arch }}${ext}
           echo "exename=${exename}" >> $GITHUB_OUTPUT
           echo "path=bin/${exename}" >> $GITHUB_OUTPUT
 
@@ -71,13 +72,13 @@ jobs:
         if: runner.os != 'macos'
         run: strip -s ${{ steps.os.outputs.path }}
 
-      - name: Compress executable
+      - name: Comparess executable
         if: runner.os != 'macos'
-        uses: svenstaro/upx-action@v2
+        uses: crazy-max/ghaction-upx@v3
         with:
-          files: ${{ steps.os.outputs.path }}
+          files: |
+            ${{ steps.os.outputs.path }}
           args: -9
-          strip: false
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
