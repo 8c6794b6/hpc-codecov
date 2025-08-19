@@ -3,6 +3,7 @@
 module Test.Main (main) where
 
 -- base
+import           Control.Applicative         ((<|>))
 import           Control.Exception           (SomeException (..), try)
 import           Control.Monad               (when)
 import           Data.Char                   (toLower)
@@ -27,7 +28,6 @@ import           System.FilePath             (joinPath, takeFileName,
 
 -- directory
 import           System.Directory            (canonicalizePath,
-                                              doesDirectoryExist,
                                               removeDirectoryRecursive,
                                               removeFile,
                                               withCurrentDirectory)
@@ -372,7 +372,7 @@ discoverStackTest =
         (a,r) -> withResource a r (const act)
       do_nothing _ = pure ()
       rmdir_in_project1 dir =
-        removeDirectoryRecursiveIfExist (testData "project1" </> dir)
+        removeDirectoryRecursive' (testData "project1" </> dir)
       remove_stack_build_dirs =
         mapM_ rmdir_in_project1 [".stack-work", "dot-stack-work"]
       cleanUpDirs tree =
@@ -577,16 +577,14 @@ withTempDir = withResource acquire release
          Just Stack -> pure ".hpc_codecov_test_tmp_stack"
          Just Cabal -> pure ".hpc_codecov_test_tmp_cabal_v2"
          _          -> error "Cannot determine build tool"
-       removeDirectoryRecursiveIfExist dir
+       removeDirectoryRecursive' dir
        pure dir
      release _ = return ()
 
--- | Simple wrapper to remove directory recursively. Does not catch
--- exceptions.
-removeDirectoryRecursiveIfExist :: FilePath -> IO ()
-removeDirectoryRecursiveIfExist dir = do
-  exist <- doesDirectoryExist dir
-  when exist $ removeDirectoryRecursive dir
+-- | Simple wrapper to remove directory recursively. Exceptions are
+-- ignored.
+removeDirectoryRecursive' :: FilePath -> IO ()
+removeDirectoryRecursive' dir = removeDirectoryRecursive dir <|> pure ()
 
 -- | Pass the HUnit test when an exception was thrown, otherwise a
 -- test failure.
