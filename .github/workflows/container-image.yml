@@ -17,11 +17,11 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v5
         with:
-          name: hpc-codecov-Linux-static
+          name: hpc-codecov-Linux-X64-static
           path: ./
 
       - name: Change mode
-        run: chmod +x hpc-codecov-Linux-static
+        run: chmod +x hpc-codecov-Linux-X64-static
 
       - name: Show contents of current directory
         run: ls -lh
