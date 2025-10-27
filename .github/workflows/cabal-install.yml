@@ -81,7 +81,7 @@ jobs:
           args: -9
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: ${{ steps.os.outputs.exename }}
           path: ${{ steps.os.outputs.path }}
