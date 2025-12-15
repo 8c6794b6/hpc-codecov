@@ -50,7 +50,7 @@ jobs:
           echo "path=bin/${exename}" >> $GITHUB_OUTPUT
 
       - name: Cache cabal store directory
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ steps.os.outputs.store }}
           key: cabal-store-${{ env.cache-version }}
