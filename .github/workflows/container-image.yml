@@ -15,7 +15,7 @@ jobs:
         run: docker --version
 
       - name: Download artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v7
         with:
           name: hpc-codecov-Linux-X64-static
           path: ./
