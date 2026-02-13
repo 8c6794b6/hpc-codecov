@@ -106,6 +106,13 @@ See
 to generate Codecov coverage report from GitHub workflow.
 
 
+Using in GitLab
+---------------
+See the
+[haskell-cobertura-demo](https://gitlab.com/8c6794b6/haskell-cobertura-demo)
+repository to show coverage information in GitLab merge requests.
+
+
 Examples
 --------
 
