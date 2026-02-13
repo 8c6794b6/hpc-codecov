@@ -1,5 +1,10 @@
 # Revision history for hpc-codecov
 
+## 0.6.4.0 -- 2026-02-13
+
+- Modify the version range of ``time`` and ``containers`` packages to
+  support ghc 9.14.
+
 ## 0.6.3.0 -- 2025-07-25
 
 - Modify the version range of ``time`` package to support 1.14, which
