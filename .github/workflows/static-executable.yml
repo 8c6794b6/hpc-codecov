@@ -42,7 +42,7 @@ jobs:
         run: readelf -d ./bin/${{ env.exe }}
 
       - name: Compress executable
-        uses: svenstaro/upx-action@v2
+        uses: svenstaro/upx-action@v3
         with:
           files: ./bin/${{ env.exe }}
           args: -9
