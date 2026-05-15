@@ -32,7 +32,7 @@ jobs:
     - name: Cache stack related directories
       uses: 8c6794b6/playing-with-github/.github/actions/setup-stack-cache@main
       with:
-        cache-key: ${{ hashFiles('stack.yaml') }}-${{ inputs.cache }}
+        cache-key: ${{ hashFiles('stack.yaml') }}-${{ matrix.os }}-${{ inputs.cache }}
 
     - name: Setup stack
       uses: haskell-actions/setup@v2
