@@ -1,5 +1,9 @@
 # Revision history for hpc-codecov
 
+## 0.6.4.1 -- 2026-05-15
+
+- Modify internal test to support ``tasty`` 1.5.4.
+
 ## 0.6.4.0 -- 2026-02-13
 
 - Modify the version range of ``time`` and ``containers`` packages to
