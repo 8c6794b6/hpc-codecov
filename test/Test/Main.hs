@@ -46,6 +46,11 @@ import           System.Process              (CreateProcess (..),
 import           Test.Tasty                  (DependencyType (..),
                                               TestTree, after, defaultMain,
                                               testGroup, withResource)
+
+#if MIN_VERSION_tasty(1,5,4)
+import           Test.Tasty                  (dependentTestGroup)
+#endif
+
 import           Test.Tasty.HUnit            (assertEqual, assertFailure,
                                               testCase)
 
@@ -79,7 +84,7 @@ main = do
     , "================================="
     , "" ]
 
-  defaultMain $ testGroup "main" $
+  defaultMain $ orderedTestGroup "main" $
     [reportTest, cmdline, recipReport, exceptionTest, parserTest] ++
     [exprOnly, ignoreDittos] ++
     [selfReportTest | not test_in_test, isJust mb_tool] ++
@@ -87,8 +92,8 @@ main = do
     [discoverCabalTest | not test_in_test, mb_tool == Just Cabal]
 
 parserTest :: TestTree
-parserTest = testGroup "parser"
-  [ testGroup "readTix'"
+parserTest = orderedTestGroup "parser"
+  [ orderedTestGroup "readTix'"
     [ testCase "compare" $ do
         let read_with f = f (reciprocal_dir </> "reciprocal.tix")
         tix1 <- read_with readTix
@@ -96,7 +101,7 @@ parserTest = testGroup "parser"
         assertEqual "readTix'" tix1 tix2
     ]
 
-  , testGroup "readMix'"
+  , orderedTestGroup "readMix'"
     [ testCase "compare" $ do
         let read_with f = f [reciprocal_dir </> ".hpc"] (Left "Main")
         mix1 <- read_with readMix
@@ -134,7 +139,7 @@ reportTest = testGroup "report"
   ]
 
 cmdline :: TestTree
-cmdline = testGroup "cmdline"
+cmdline = orderedTestGroup "cmdline"
   [ testCase "non-existing-option"
              (shouldFail (main' ["--foo"]))
   , testCase "non-existing-options"
@@ -157,7 +162,7 @@ cmdline = testGroup "cmdline"
   ]
 
 recipReport :: TestTree
-recipReport = testGroup "recip"
+recipReport = orderedTestGroup "recip"
   [ testCase "recip-data-to-stdout"
              (main' ["--mix=test/data/reciprocal/.hpc"
                     ,"--src=test/data/reciprocal"
@@ -186,7 +191,7 @@ recipReport = testGroup "recip"
   ]
 
 exprOnly :: TestTree
-exprOnly = testGroup "expr-only" $
+exprOnly = orderedTestGroup "expr-only" $
   let eo01_dir = joinPath ["test", "data", "eo01"]
       common_args = ["--mix=" <> (eo01_dir </> ".hpc")
                     ,"--src=" <> eo01_dir
@@ -204,7 +209,7 @@ exprOnly = testGroup "expr-only" $
       ]
 
 ignoreDittos :: TestTree
-ignoreDittos = testGroup "ignore-dittos" $
+ignoreDittos = orderedTestGroup "ignore-dittos" $
   let doGolden name =
         let golden_path = goldenPath (ofile <.> "golden")
             ofile = dir </> name <.> "json"
@@ -218,7 +223,7 @@ ignoreDittos = testGroup "ignore-dittos" $
         in  goldenVsFile name golden_path ofile act
   in  [ doGolden "ifd01"
       , doGolden "ith01"
-    ]
+      ]
 
 -- Note: Running test to generate .mix and .tix of hpc-codecov package
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -326,7 +331,7 @@ getSelfReportCabalArgs setup bd = do
                 , sra_build = Just bd }
 
 selfReport :: IO SRA -> TestTree
-selfReport getArgs = testGroup "self"
+selfReport getArgs = orderedTestGroup "self"
   [ testCase "self-data-to-stdout"
              (getArgs >>= sraMain)
   , testCase "self-data-to-stdout-lcov"
@@ -377,8 +382,8 @@ discoverStackTest =
         mapM_ rmdir_in_project1 [".stack-work", "dot-stack-work"]
       cleanUpDirs tree =
         withResource remove_stack_build_dirs do_nothing (\_ -> tree)
-  in  cleanUpDirs $ testGroup "discover_stack"
-        [ testGroup "plain"
+  in  cleanUpDirs $ orderedTestGroup "discover_stack"
+        [ orderedTestGroup "plain"
           [ t "project1"
             [ "--root=" ++ testData "project1"
             , "--verbose"
@@ -386,7 +391,7 @@ discoverStackTest =
             []
           ]
 
-        , testGroup "dot-stack-work"
+        , orderedTestGroup "dot-stack-work"
           [ t "project1"
             [ "--root=" ++ testData "project1"
             , "--verbose"
@@ -396,7 +401,7 @@ discoverStackTest =
             ["--work-dir=dot-stack-work"]
           ]
 
-        , testGroup "lcov"
+        , orderedTestGroup "lcov"
           [ t "project1"
             [ "--root=" ++ testData "project1"
             , "--verbose"
@@ -405,7 +410,7 @@ discoverStackTest =
             []
           ]
 
-        , testGroup "cobertura"
+        , orderedTestGroup "cobertura"
           [ t "project1"
             [ "--root=" ++ testData "project1"
             , "--verbose"
@@ -417,7 +422,7 @@ discoverStackTest =
           ]
 
         , after AllSucceed "cobertura.project1" $
-          testGroup "golden"
+          orderedTestGroup "golden"
           [ let ofile = "project1-refilled.xml"
                 golden_file = goldenPath "project1.xml.golden"
                 golden_path = joinPath ["test", "data", "golden", golden_file]
@@ -435,7 +440,7 @@ discoverStackTest =
               (findUnder (\p -> takeFileName p == "project1-test.tix")
                          (testData "project1" </> ".stack-work"))
               (\_ -> pure ())
-              (\getTixPath -> testCase "project1" $ do
+              (\getTixPath -> testCase "raw-tix-path" $ do
                  tix_path <- fromMaybe "project1-test.tix" <$> getTixPath
                  canonical_tix_path <- canonicalizePath tix_path
                  putStrLn $
@@ -464,7 +469,7 @@ discoverCabalTest =
         callProcessIn (testData "project1") "cabal" ["clean"]
       cleanUpDirs tree =
         withResource cabal_clean (const $ pure ()) (const tree)
-  in  cleanUpDirs $ testGroup "discover_cabal"
+  in  cleanUpDirs $ orderedTestGroup "discover_cabal"
         [ t "project1"
           [ "--root=" ++ testData "project1"
           , "--verbose"
@@ -478,7 +483,7 @@ discoverCabalTest =
               (findUnder (\p -> takeFileName p == "project1-test.tix")
                 (testData "project1" </> "dist-newstyle"))
               (\_ -> pure ())
-              (\getTixPath -> testCase "project1" $ do
+              (\getTixPath -> testCase "raw-tix-path" $ do
                   tix_path <- fromMaybe "project1-test.tix" <$> getTixPath
                   canonical_tix_path <- canonicalizePath tix_path
                   main' [ "--verbose"
@@ -603,3 +608,11 @@ goldenPath :: FilePath -> FilePath
 goldenPath path
   | os == "mingw32" = path <.> "windows"
   | otherwise = path
+
+#if MIN_VERSION_tasty(1,5,4)
+orderedTestGroup :: String -> [TestTree] -> TestTree
+orderedTestGroup name = dependentTestGroup name AllFinish
+#else
+orderedTestGroup :: String -> [TestTree] -> TestTree
+orderedTestGroup = testGroup
+#endif
