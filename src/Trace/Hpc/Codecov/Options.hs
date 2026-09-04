@@ -178,7 +178,7 @@ options =
            "Show verbose output"
   , Option [] ["version"]
            (NoArg (\o -> o {optShowVersion = True}))
-           "Show versoin and exit"
+           "Show version and exit"
   , Option [] ["numeric-version"]
            (NoArg (\o -> o {optShowNumeric = True}))
            "Show numeric version and exit"
